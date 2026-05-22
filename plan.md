@@ -20,7 +20,7 @@ packages/shared/      (name: "shared", private: true)
   tsconfig.json
   src/index.ts        ← all shared types
 
-server/               (name: "server", private: true)
+packages/server/      (name: "server", private: true)
   package.json
   tsconfig.json
   drizzle.config.ts
@@ -48,7 +48,7 @@ server/               (name: "server", private: true)
       devices.ts
       ws.ts
 
-client/               (name: "client", private: true)
+packages/client/      (name: "client", private: true)
   package.json
   tsconfig.json
   vite.config.ts
@@ -75,16 +75,16 @@ client/               (name: "client", private: true)
       SwedenMapDisplay.tsx
 ```
 
-All packages are private and never published. No npm scope needed — they reference each other via `workspace:*` in package.json.
+All packages are private and never published. No npm scope needed — they reference each other via `workspace:*` in package.json. The `packages/*` glob covers all three packages.
 
 ---
 
 ## Key Dependencies
 
-**server**: `hono`, `@hono/node-server`, `@hono/node-ws`, `drizzle-orm`, `postgres`, `csv-parse`, `jose`, `shared`  
-**server dev**: `drizzle-kit`, `typescript`, `@types/node`, `tsx`
+**server**: `hono`, `@hono/node-server`, `@hono/node-ws`, `drizzle-orm`, `pg`, `csv-parse`, `jose`, `dotenv`, `shared`  
+**server dev**: `drizzle-kit`, `typescript`, `@types/node`, `@types/pg`, `tsx`
 
-**client**: `react`, `react-dom`, `react-router-dom`, `d3-geo`, `topojson-client`, `world-atlas`, `suncalc`, `shared`  
+**client**: `react`, `react-dom`, `@tanstack/react-router`, `d3-geo`, `topojson-client`, `world-atlas`, `suncalc`, `shared`  
 **client dev**: `vite`, `@vitejs/plugin-react`, `typescript`, `tailwindcss`, `postcss`, `autoprefixer`, `@types/topojson-client`, `@types/d3-geo`, `@types/suncalc`
 
 ---
@@ -292,13 +292,15 @@ Global, not per-survey. Columns: `tag_id, display_name, lat, lng`.
 
 ## Client Routing
 
+Uses TanStack Router (file-based or code-based routing).
+
 ```
 /                          → redirect /admin
 /admin                     → SurveyList
 /admin/surveys/new         → CreateSurveyModal
 /admin/surveys/:id         → SurveyDetail
 /admin/devices             → DeviceList
-/display/:surveyId         → DisplayView (public, no auth)
+/display/$surveyId         → DisplayView (public, no auth)
 ```
 
 No keycloak-js. All admin routes check auth state from a lightweight context (does `j26-auth_access-token` cookie exist + is the admin API responding without 401). On 401, redirect to Keycloak `authorization_endpoint`.
@@ -361,9 +363,13 @@ Display client → WS connect → {type:'subscribe', surveyId}
 
 ## Production Build
 
+Node 24 native type stripping is used — no TypeScript compilation step for the server. pnpm workspace symlinks resolve to real paths outside `node_modules`, so type stripping applies to `shared` as well. Do not use `pnpm deploy` (it copies packages into a real `node_modules` directory, breaking this).
+
 Multi-stage Dockerfile:
-1. Build stage: install pnpm, install deps, build shared → client → server
-2. Production stage: compiled output + drizzle migrations + prod deps only
+1. Build stage: install pnpm, install deps, build client (Vite) only
+2. Production stage: server source + client dist + drizzle migrations + prod deps
+
+Server dev script: `tsx watch src/index.ts`
 
 Client dist served by Hono `serveStatic` in production. `docker-compose.yml`: `postgres:16-alpine` + `app`.
 
@@ -373,18 +379,18 @@ Client dist served by Hono `serveStatic` in production. `docker-compose.yml`: `p
 
 1. Root config (`pnpm-workspace.yaml`, `package.json`, `.gitignore`)
 2. `packages/shared/src/index.ts`
-3. `server/` config + `drizzle/0000_init.sql` + `server/src/db/`
-4. `server/src/auth-device.ts`, `server/src/auth-admin.ts`
-5. `server/src/surveys/types.ts` → `vote.ts` → `map.ts` → `registry.ts`
-6. `server/src/ws/manager.ts`
-7. `server/src/state/manager.ts`
-8. `server/src/routes/` (scans, surveys, devices, ws)
-9. `server/src/index.ts`
-10. `client/` config files + `theme.ts`
-11. `client/src/api.ts`, `hooks/useSurveySocket.ts`
-12. `client/src/admin/` components
-13. `client/src/display/` components (`WorldMapDisplay`, `SwedenMapDisplay`, `VoteDisplay`, `DisplayView`)
-14. `client/src/App.tsx`, `main.tsx`
+3. `packages/server/` config + `drizzle/0000_init.sql` + `packages/server/src/db/`
+4. `packages/server/src/auth-device.ts`, `packages/server/src/auth-admin.ts`
+5. `packages/server/src/surveys/types.ts` → `vote.ts` → `map.ts` → `registry.ts`
+6. `packages/server/src/ws/manager.ts`
+7. `packages/server/src/state/manager.ts`
+8. `packages/server/src/routes/` (scans, surveys, devices, ws)
+9. `packages/server/src/index.ts`
+10. `packages/client/` config files + `theme.ts`
+11. `packages/client/src/api.ts`, `hooks/useSurveySocket.ts`
+12. `packages/client/src/admin/` components
+13. `packages/client/src/display/` components (`WorldMapDisplay`, `SwedenMapDisplay`, `VoteDisplay`, `DisplayView`)
+14. `packages/client/src/App.tsx`, `main.tsx`
 15. `Dockerfile`, `docker-compose.yml`
 
 ---

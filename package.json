@@ -1,0 +1,16 @@
+{
+	"name": "j26-interactive-screens-v2",
+	"private": true,
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "UNLICENSED",
+	"packageManager": "pnpm@10.25.0",
+	"devDependencies": {
+		"@biomejs/biome": "2.4.15"
+	}
+}
