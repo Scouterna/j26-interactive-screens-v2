@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import type { CreateDeviceResponse } from "shared";
 import {
 	AuthError,
+	assignDeviceSurvey,
 	createDevice,
 	deleteDevice,
 	fetchDevices,
@@ -87,6 +88,17 @@ export default function DeviceList() {
 		}
 	}
 
+	async function handleUnassign(device: DeviceItem) {
+		const surveyName = device.surveyId ? (surveyNames[device.surveyId] ?? "this survey") : "this survey";
+		if (!window.confirm(`Remove "${device.name}" from "${surveyName}"?`)) return;
+		try {
+			const updated = await assignDeviceSurvey(device.id, null);
+			setDevices((prev) => prev.map((d) => (d.id === device.id ? updated : d)));
+		} catch (err) {
+			if (err instanceof AuthError) markUnauthorized();
+		}
+	}
+
 	return (
 		<div>
 			<h1 className="text-xl font-semibold text-gray-900 mb-6">Devices</h1>
@@ -157,9 +169,20 @@ export default function DeviceList() {
 									)}
 								</td>
 								<td className="px-4 py-2 text-sm text-gray-600">
-									{device.surveyId
-										? (surveyNames[device.surveyId] ?? "—")
-										: <span className="text-gray-400">None</span>}
+									{device.surveyId ? (
+										<span className="flex items-center gap-2">
+											<span>{surveyNames[device.surveyId] ?? "—"}</span>
+											<button
+												type="button"
+												onClick={() => void handleUnassign(device)}
+												className="text-xs text-red-400 hover:text-red-600"
+											>
+												Unassign
+											</button>
+										</span>
+									) : (
+										<span className="text-gray-400">None</span>
+									)}
 								</td>
 								<td className="px-4 py-3 text-gray-600">
 									{new Date(device.createdAt).toLocaleDateString()}
