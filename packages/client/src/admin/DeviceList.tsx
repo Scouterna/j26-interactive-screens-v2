@@ -74,7 +74,8 @@ export default function DeviceList() {
 		}
 	}
 
-	async function handleDelete(id: string) {
+	async function handleDelete(id: string, name: string) {
+		if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
 		try {
 			await deleteDevice(id);
 			setDevices((prev) => prev.filter((d) => d.id !== id));
@@ -209,7 +210,7 @@ export default function DeviceList() {
 											</button>
 											<button
 												type="button"
-												onClick={() => void handleDelete(device.id)}
+												onClick={() => void handleDelete(device.id, device.name)}
 												className="text-red-500 hover:text-red-700"
 											>
 												Delete
@@ -229,6 +230,8 @@ export default function DeviceList() {
 					</tbody>
 				</table>
 			</div>
+
+
 		</div>
 	);
 }

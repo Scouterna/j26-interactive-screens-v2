@@ -151,6 +151,7 @@ export default function SurveyDetail() {
 	}
 
 	async function handleDelete() {
+		if (!window.confirm(`Delete "${survey?.name}"? This cannot be undone.`)) return;
 		try {
 			await deleteSurvey(id);
 			void navigate({ to: "/admin" });
@@ -194,6 +195,7 @@ export default function SurveyDetail() {
 						onChange={(s) => void handleStatusChange(s)}
 					/>
 					<button
+						type="button"
 						onClick={() => void handleDelete()}
 						className="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50"
 					>
@@ -411,6 +413,8 @@ export default function SurveyDetail() {
 					className="w-full aspect-video bg-gray-950"
 				/>
 			</div>
+
+
 		</div>
 	);
 }

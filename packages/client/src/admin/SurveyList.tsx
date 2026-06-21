@@ -24,7 +24,8 @@ export default function SurveyList() {
 			});
 	}, [markUnauthorized]);
 
-	async function handleDelete(id: string) {
+	async function handleDelete(id: string, name: string) {
+		if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
 		try {
 			await deleteSurvey(id);
 			setSurveys((prev) => prev.filter((s) => s.id !== id));
@@ -88,7 +89,7 @@ export default function SurveyList() {
 								<td className="px-4 py-3 text-right">
 									<button
 										type="button"
-										onClick={() => void handleDelete(survey.id)}
+										onClick={() => void handleDelete(survey.id, survey.name)}
 										className="text-red-500 hover:text-red-700"
 									>
 										Delete
