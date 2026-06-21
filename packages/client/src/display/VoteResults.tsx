@@ -37,8 +37,8 @@ export default function VoteResults({ state, daylight }: { state: VoteDisplaySta
 						</div>
 						<div className={`h-2 rounded-full overflow-hidden ${daylight ? "bg-gray-200" : "bg-gray-800"}`}>
 							<div
-								className={`h-2 rounded-full ${i === 0 ? (daylight ? "bg-amber-500" : "bg-yellow-400") : (daylight ? "bg-gray-400" : "bg-gray-600")}`}
-								style={{ width: `${bucket.pct}%` }}
+								className="h-2 rounded-full"
+								style={{ width: `${bucket.pct}%`, backgroundColor: i === 0 ? (daylight ? "#f59e0b" : "#facc15") : "#003660" }}
 							/>
 						</div>
 					</div>

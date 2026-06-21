@@ -18,8 +18,8 @@ export default function VoteDisplay({ state, daylight }: { state: VoteDisplaySta
 						</div>
 						<div className={`h-8 rounded-full overflow-hidden ${daylight ? "bg-gray-200" : "bg-gray-800"}`}>
 							<div
-								className={`h-8 rounded-full transition-all duration-700 ease-out ${daylight ? "bg-blue-600" : "bg-blue-500"}`}
-								style={{ width: `${pct}%` }}
+								className="h-8 rounded-full transition-all duration-700 ease-out"
+								style={{ width: `${pct}%`, backgroundColor: "#003660" }}
 							/>
 						</div>
 					</div>
