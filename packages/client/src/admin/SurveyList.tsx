@@ -36,7 +36,8 @@ export default function SurveyList() {
 		}
 	}
 
-	const activeSurveys = (surveys ?? []).filter((s) => s.status !== "ended" && s.status !== "archived");
+	const draftSurveys = (surveys ?? []).filter((s) => s.status === "draft");
+	const activeSurveys = (surveys ?? []).filter((s) => s.status === "active");
 	const endedSurveys = (surveys ?? []).filter((s) => s.status === "ended");
 	const archivedSurveys = (surveys ?? []).filter((s) => s.status === "archived");
 
@@ -131,7 +132,19 @@ export default function SurveyList() {
 				</button>
 			</div>
 
-			{renderTable(activeSurveys, "No surveys yet")}
+			{draftSurveys.length > 0 && (
+				<div className="mb-8">
+					<h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+						Drafts
+					</h2>
+					{renderTable(draftSurveys, "")}
+				</div>
+			)}
+
+			<h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+				Active
+			</h2>
+			{renderTable(activeSurveys, "No active surveys")}
 
 			{endedSurveys.length > 0 && (
 				<div className="mt-8">

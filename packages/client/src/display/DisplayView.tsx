@@ -1,7 +1,8 @@
 import { useParams } from "@tanstack/react-router";
-import type { VoteDisplayState } from "shared";
+import type { MapDisplayState, VoteDisplayState } from "shared";
 import { useDaylight } from "../hooks/useDaylight";
 import { useSurveySocket } from "../hooks/useSurveySocket";
+import MapDisplay from "./MapDisplay";
 import VoteDisplay from "./VoteDisplay";
 import VoteResults from "./VoteResults";
 
@@ -24,16 +25,16 @@ export default function DisplayView() {
 		);
 	}
 
+	if (displayState?.type === "map") {
+		return <MapDisplay state={displayState as MapDisplayState} daylight={daylight} />;
+	}
+
 	return (
 		<div className={`min-h-screen ${bg} flex flex-col items-center justify-center`}>
 			{!displayState ? (
 				!ended && <p className={`text-xl ${daylight ? "text-gray-400" : "text-gray-700"}`}>Ansluter…</p>
-			) : displayState.type === "vote" ? (
-				<VoteDisplay state={displayState} daylight={daylight} />
 			) : (
-				<p className={`text-xl ${daylight ? "text-gray-500" : "text-gray-500"}`}>
-					{displayState.pins.length} nål{displayState.pins.length !== 1 ? "ar" : ""} aktiv{displayState.pins.length !== 1 ? "a" : ""}
-				</p>
+				<VoteDisplay state={displayState} daylight={daylight} />
 			)}
 			{ended && (
 				<p className={`text-sm uppercase tracking-widest mt-8 ${daylight ? "text-gray-400" : "text-gray-600"}`}>

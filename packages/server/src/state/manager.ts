@@ -57,12 +57,20 @@ export class StateManager {
 				setInterval(() => {
 					const entry = this.active.get(survey.id);
 					if (!entry) return;
-					const { changed, newState } = getHandler(survey.type).cleanupExpired(
+					const handler = getHandler(survey.type);
+					const { changed, newState } = handler.cleanupExpired(
 						entry.state,
 						survey.config as SurveyConfig,
 					);
-					if (changed) entry.state = newState;
-				}, 60_000),
+					if (changed) {
+						entry.state = newState;
+						this.ws.broadcast(survey.id, {
+							type: "update",
+							surveyId: survey.id,
+							data: handler.toDisplayState(newState, survey.config as SurveyConfig),
+						});
+					}
+				}, 5_000),
 			);
 		}
 
@@ -176,9 +184,9 @@ export class StateManager {
 				surveyId,
 				data: handler.toDisplayState(entry.state, config),
 			});
-			logger.debug({ surveyId, scannerId, tagId }, "scan: accepted");
+			logger.info({ surveyId, scannerId, tagId }, "scan: accepted");
 		} else {
-			logger.debug(
+			logger.info(
 				{ surveyId, scannerId, tagId, reason: result.rejectionReason },
 				"scan: rejected",
 			);
