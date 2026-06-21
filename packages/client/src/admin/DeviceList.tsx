@@ -2,9 +2,11 @@ import { useContext, useEffect, useRef, useState } from "react";
 import type { CreateDeviceResponse } from "shared";
 import {
 	AuthError,
+	assignDeviceSurvey,
 	createDevice,
 	deleteDevice,
 	fetchDevices,
+	fetchSurveys,
 	renameDevice,
 	type DeviceItem,
 } from "../api";
@@ -13,6 +15,7 @@ import { AuthContext } from "./AdminLayout";
 export default function DeviceList() {
 	const { markUnauthorized } = useContext(AuthContext);
 	const [devices, setDevices] = useState<DeviceItem[]>([]);
+	const [surveys, setSurveys] = useState<{ id: string; name: string }[]>([]);
 	const [newName, setNewName] = useState("");
 	const [newKey, setNewKey] = useState<CreateDeviceResponse | null>(null);
 	const [creating, setCreating] = useState(false);
@@ -23,6 +26,11 @@ export default function DeviceList() {
 	useEffect(() => {
 		fetchDevices()
 			.then(setDevices)
+			.catch((err: unknown) => {
+				if (err instanceof AuthError) markUnauthorized();
+			});
+		fetchSurveys()
+			.then((all) => setSurveys(all.filter((s) => s.status === "active").map((s) => ({ id: s.id, name: s.name }))))
 			.catch((err: unknown) => {
 				if (err instanceof AuthError) markUnauthorized();
 			});
@@ -55,7 +63,7 @@ export default function DeviceList() {
 			const device = await createDevice(newName.trim());
 			setDevices((prev) => [
 				...prev,
-				{ id: device.id, name: device.name, createdAt: new Date().toISOString() },
+				{ id: device.id, name: device.name, surveyId: null, createdAt: new Date().toISOString() },
 			]);
 			setNewKey(device);
 			setNewName("");
@@ -75,6 +83,15 @@ export default function DeviceList() {
 		}
 	}
 
+	async function handleSurveyChange(deviceId: string, surveyId: string | null) {
+		try {
+			const updated = await assignDeviceSurvey(deviceId, surveyId);
+			setDevices((prev) => prev.map((d) => (d.id === deviceId ? updated : d)));
+		} catch (err) {
+			if (err instanceof AuthError) markUnauthorized();
+		}
+	}
+
 	return (
 		<div>
 			<h1 className="text-xl font-semibold text-gray-900 mb-6">Devices</h1>
@@ -89,6 +106,7 @@ export default function DeviceList() {
 						{newKey.key}
 					</code>
 					<button
+						type="button"
 						onClick={() => setNewKey(null)}
 						className="mt-2 text-xs text-green-700 hover:underline"
 					>
@@ -119,6 +137,7 @@ export default function DeviceList() {
 					<thead>
 						<tr className="border-b border-gray-200 bg-gray-50">
 							<th className="px-4 py-3 text-left font-medium text-gray-500">Name</th>
+							<th className="px-4 py-3 text-left font-medium text-gray-500">Survey</th>
 							<th className="px-4 py-3 text-left font-medium text-gray-500">Created</th>
 							<th className="px-4 py-3" />
 						</tr>
@@ -142,6 +161,22 @@ export default function DeviceList() {
 										<span className="text-gray-900">{device.name}</span>
 									)}
 								</td>
+								<td className="px-4 py-2">
+									<select
+										value={device.surveyId ?? ""}
+										onChange={(e) =>
+											void handleSurveyChange(device.id, e.target.value || null)
+										}
+										className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+									>
+										<option value="">— none —</option>
+										{surveys.map((s) => (
+											<option key={s.id} value={s.id}>
+												{s.name}
+											</option>
+										))}
+									</select>
+								</td>
 								<td className="px-4 py-3 text-gray-600">
 									{new Date(device.createdAt).toLocaleDateString()}
 								</td>
@@ -149,12 +184,14 @@ export default function DeviceList() {
 									{renamingId === device.id ? (
 										<div className="flex justify-end gap-3">
 											<button
+												type="button"
 												onClick={() => void commitRename(device.id)}
 												className="text-blue-600 hover:text-blue-800"
 											>
 												Save
 											</button>
 											<button
+												type="button"
 												onClick={() => setRenamingId(null)}
 												className="text-gray-400 hover:text-gray-600"
 											>
@@ -164,12 +201,14 @@ export default function DeviceList() {
 									) : (
 										<div className="flex justify-end gap-3">
 											<button
+												type="button"
 												onClick={() => startRename(device)}
 												className="text-gray-500 hover:text-gray-700"
 											>
 												Rename
 											</button>
 											<button
+												type="button"
 												onClick={() => void handleDelete(device.id)}
 												className="text-red-500 hover:text-red-700"
 											>
@@ -182,7 +221,7 @@ export default function DeviceList() {
 						))}
 						{devices.length === 0 && (
 							<tr>
-								<td colSpan={3} className="px-4 py-10 text-center text-gray-400">
+								<td colSpan={4} className="px-4 py-10 text-center text-gray-400">
 									No devices yet
 								</td>
 							</tr>

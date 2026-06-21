@@ -13,6 +13,7 @@ export function devicesRoutes() {
 			.select({
 				id: devices.id,
 				name: devices.name,
+				surveyId: devices.surveyId,
 				createdAt: devices.createdAt,
 			})
 			.from(devices);
@@ -26,7 +27,7 @@ export function devicesRoutes() {
 		const [d] = await db
 			.insert(devices)
 			.values({ name, keyHash })
-			.returning({ id: devices.id, name: devices.name });
+			.returning({ id: devices.id, name: devices.name, surveyId: devices.surveyId });
 		return c.json({ ...d, key: rawKey }, 201);
 	});
 
@@ -39,6 +40,23 @@ export function devicesRoutes() {
 			.returning({
 				id: devices.id,
 				name: devices.name,
+				surveyId: devices.surveyId,
+				createdAt: devices.createdAt,
+			});
+		if (!d) return c.json({ error: "Not found" }, 404);
+		return c.json(d);
+	});
+
+	app.patch("/:id/survey", adminAuth("surveys:write"), async (c) => {
+		const { surveyId } = await c.req.json<{ surveyId: string | null }>();
+		const [d] = await db
+			.update(devices)
+			.set({ surveyId })
+			.where(eq(devices.id, c.req.param("id")))
+			.returning({
+				id: devices.id,
+				name: devices.name,
+				surveyId: devices.surveyId,
 				createdAt: devices.createdAt,
 			});
 		if (!d) return c.json({ error: "Not found" }, 404);

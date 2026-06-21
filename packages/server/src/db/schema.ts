@@ -12,6 +12,7 @@ export const devices = pgTable("devices", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
 	keyHash: text("key_hash").notNull().unique(),
+	surveyId: uuid("survey_id").references(() => surveys.id, { onDelete: "set null" }),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

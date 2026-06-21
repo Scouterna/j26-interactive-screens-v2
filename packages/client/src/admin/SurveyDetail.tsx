@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useContext, useEffect, useState } from "react";
 import type { MapSurveyConfig, SurveyResponse, SurveyStatus, VoteSurveyConfig } from "shared";
-import { AuthError, deleteSurvey, fetchSurvey, updateSurvey } from "../api";
+import { AuthError, assignDeviceSurvey, deleteSurvey, fetchDevices, fetchSurvey, updateSurvey, type DeviceItem } from "../api";
 import { BASE_PATH } from "../config";
 import { AuthContext } from "./AdminLayout";
 
@@ -11,9 +11,16 @@ const STATUS_CLASSES: Record<SurveyStatus, string> = {
 	ended: "bg-red-100 text-red-700",
 };
 
+const SCANNER_IDS = ["1", "2", "3", "4"];
+
+interface EditBucket {
+	label: string;
+	scannerIds: string[];
+}
+
 interface EditState {
 	name: string;
-	buckets: string[];
+	buckets: EditBucket[];
 	pinLifetime: number;
 	rescanCooldown: number;
 }
@@ -23,6 +30,7 @@ export default function SurveyDetail() {
 	const { id } = useParams({ strict: false }) as { id: string };
 	const navigate = useNavigate();
 	const [survey, setSurvey] = useState<SurveyResponse | null>(null);
+	const [devices, setDevices] = useState<DeviceItem[]>([]);
 	const [copied, setCopied] = useState(false);
 	const [edit, setEdit] = useState<EditState | null>(null);
 	const [saving, setSaving] = useState(false);
@@ -43,14 +51,37 @@ export default function SurveyDetail() {
 			.catch((err: unknown) => {
 				if (err instanceof AuthError) markUnauthorized();
 			});
+		fetchDevices()
+			.then(setDevices)
+			.catch((err: unknown) => {
+				if (err instanceof AuthError) markUnauthorized();
+			});
 	}, [id, markUnauthorized]);
+
+	async function handleAssignDevice(deviceId: string) {
+		try {
+			const updated = await assignDeviceSurvey(deviceId, id);
+			setDevices((prev) => prev.map((d) => (d.id === deviceId ? updated : d)));
+		} catch (err) {
+			if (err instanceof AuthError) markUnauthorized();
+		}
+	}
+
+	async function handleUnassignDevice(deviceId: string) {
+		try {
+			const updated = await assignDeviceSurvey(deviceId, null);
+			setDevices((prev) => prev.map((d) => (d.id === deviceId ? updated : d)));
+		} catch (err) {
+			if (err instanceof AuthError) markUnauthorized();
+		}
+	}
 
 	function startEdit(s: SurveyResponse) {
 		const voteConfig = s.type === "vote" ? (s.config as VoteSurveyConfig) : null;
 		const mapConfig = s.type === "map" ? (s.config as MapSurveyConfig) : null;
 		setEdit({
 			name: s.name,
-			buckets: voteConfig?.buckets.map((b) => b.label) ?? [],
+			buckets: voteConfig?.buckets.map((b) => ({ label: b.label, scannerIds: b.scannerIds })) ?? [],
 			pinLifetime: mapConfig?.pinLifetimeSeconds ?? 300,
 			rescanCooldown: mapConfig?.rescanCooldownSeconds ?? 300,
 		});
@@ -63,9 +94,9 @@ export default function SurveyDetail() {
 			const config =
 				survey.type === "vote"
 					? {
-							buckets: edit.buckets.map((label, i) => ({
-								label,
-								scannerIds: [String(i + 1)],
+							buckets: edit.buckets.map((b) => ({
+								label: b.label,
+								scannerIds: b.scannerIds,
 							})),
 						}
 					: {
@@ -166,31 +197,57 @@ export default function SurveyDetail() {
 									<span className="text-sm font-medium text-gray-700">Buckets</span>
 									<button
 										type="button"
-										onClick={() => setEdit({ ...edit, buckets: [...edit.buckets, ""] })}
+										onClick={() => setEdit({ ...edit, buckets: [...edit.buckets, { label: "", scannerIds: [] }] })}
 										className="text-xs text-blue-600 hover:underline"
 									>
 										+ Add bucket
 									</button>
 								</div>
-								<div className="flex flex-col gap-2">
-									{edit.buckets.map((label, i) => (
+								<div className="flex flex-col gap-3">
+									{edit.buckets.map((bucket, i) => (
 										<div key={i} className="flex items-center gap-2">
-											<span className="text-xs text-gray-400 w-5 shrink-0 text-right">
-												{i + 1}
-											</span>
 											<input
 												type="text"
-												value={label}
+												value={bucket.label}
 												onChange={(e) =>
 													setEdit({
 														...edit,
 														buckets: edit.buckets.map((b, idx) =>
-															idx === i ? e.target.value : b,
+															idx === i ? { ...b, label: e.target.value } : b,
 														),
 													})
 												}
 												className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 											/>
+											<div className="flex items-center gap-1">
+												{SCANNER_IDS.map((sid) => {
+													const checked = bucket.scannerIds.includes(sid);
+													return (
+														<label key={sid} className="flex items-center gap-0.5 cursor-pointer select-none">
+															<input
+																type="checkbox"
+																checked={checked}
+																onChange={(e) => {
+																	setEdit({
+																		...edit,
+																		buckets: edit.buckets.map((b, idx) => {
+																			if (e.target.checked) {
+																				// remove from any other bucket first
+																				if (idx === i) return { ...b, scannerIds: [...b.scannerIds, sid] };
+																				return { ...b, scannerIds: b.scannerIds.filter((s) => s !== sid) };
+																			}
+																			if (idx === i) return { ...b, scannerIds: b.scannerIds.filter((s) => s !== sid) };
+																			return b;
+																		}),
+																	});
+																}}
+																className="accent-blue-600"
+															/>
+															<span className="text-xs text-gray-500">{sid}</span>
+														</label>
+													);
+												})}
+											</div>
 											{edit.buckets.length > 1 && (
 												<button
 													type="button"
@@ -282,6 +339,13 @@ export default function SurveyDetail() {
 				)}
 			</div>
 
+			<DevicesSection
+				surveyId={id}
+				devices={devices}
+				onAssign={(deviceId) => void handleAssignDevice(deviceId)}
+				onUnassign={(deviceId) => void handleUnassignDevice(deviceId)}
+			/>
+
 			<div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
 				<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
 					<h2 className="text-sm font-medium text-gray-700">Screen preview</h2>
@@ -295,6 +359,65 @@ export default function SurveyDetail() {
 					className="w-full aspect-video bg-gray-950"
 				/>
 			</div>
+		</div>
+	);
+}
+
+function DevicesSection({
+	surveyId,
+	devices,
+	onAssign,
+	onUnassign,
+}: {
+	surveyId: string;
+	devices: DeviceItem[];
+	onAssign: (deviceId: string) => void;
+	onUnassign: (deviceId: string) => void;
+}) {
+	const assigned = devices.filter((d) => d.surveyId === surveyId);
+	const available = devices.filter((d) => d.surveyId !== surveyId);
+
+	return (
+		<div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+			<h2 className="text-sm font-medium text-gray-700 mb-3">Devices</h2>
+
+			{assigned.length === 0 ? (
+				<p className="text-sm text-gray-400 mb-3">No devices assigned.</p>
+			) : (
+				<ul className="mb-3 flex flex-col gap-1">
+					{assigned.map((d) => (
+						<li key={d.id} className="flex items-center justify-between text-sm">
+							<span className="text-gray-900">{d.name}</span>
+							<button
+								type="button"
+								onClick={() => onUnassign(d.id)}
+								className="text-xs text-red-500 hover:text-red-700"
+							>
+								Remove
+							</button>
+						</li>
+					))}
+				</ul>
+			)}
+
+			<select
+				defaultValue=""
+				disabled={available.length === 0}
+				onChange={(e) => {
+					if (e.target.value) onAssign(e.target.value);
+					e.target.value = "";
+				}}
+				className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+			>
+				<option value="" disabled>
+					{available.length === 0 ? "No devices available" : "Add device…"}
+				</option>
+				{available.map((d) => (
+					<option key={d.id} value={d.id}>
+						{d.name}
+					</option>
+				))}
+			</select>
 		</div>
 	);
 }

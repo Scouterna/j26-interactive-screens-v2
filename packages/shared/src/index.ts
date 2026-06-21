@@ -54,8 +54,14 @@ export interface CreateDeviceResponse {
 	name: string;
 	key: string;
 }
+export interface DeviceResponse {
+	id: string;
+	name: string;
+	surveyId: string | null;
+	createdAt: string;
+}
 export type ScanIngestionRequest = {
-	surveyId: string;
+	surveyId?: string;
 	scannerId: string;
 	tagId: string;
 }[];

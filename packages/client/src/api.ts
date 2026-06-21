@@ -1,4 +1,4 @@
-import type { CreateDeviceResponse, SurveyConfig, SurveyResponse, SurveyStatus, SurveyType } from "shared";
+import type { CreateDeviceResponse, DeviceResponse, SurveyConfig, SurveyResponse, SurveyStatus, SurveyType } from "shared";
 import { BASE_PATH } from "./config";
 
 export class AuthError extends Error {
@@ -60,11 +60,7 @@ export async function deleteSurvey(id: string): Promise<void> {
 	await apiFetch(`/surveys/${id}`, { method: "DELETE" });
 }
 
-export interface DeviceItem {
-	id: string;
-	name: string;
-	createdAt: string;
-}
+export type DeviceItem = DeviceResponse;
 
 export async function fetchDevices(): Promise<DeviceItem[]> {
 	return apiFetch("/devices").then((r) => r.json() as Promise<DeviceItem[]>);
@@ -81,6 +77,13 @@ export async function renameDevice(id: string, name: string): Promise<DeviceItem
 	return apiFetch(`/devices/${id}`, {
 		method: "PATCH",
 		body: JSON.stringify({ name }),
+	}).then((r) => r.json() as Promise<DeviceItem>);
+}
+
+export async function assignDeviceSurvey(id: string, surveyId: string | null): Promise<DeviceItem> {
+	return apiFetch(`/devices/${id}/survey`, {
+		method: "PATCH",
+		body: JSON.stringify({ surveyId }),
 	}).then((r) => r.json() as Promise<DeviceItem>);
 }
 

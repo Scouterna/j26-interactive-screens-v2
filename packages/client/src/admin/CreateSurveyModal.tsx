@@ -3,6 +3,13 @@ import type { SurveyResponse, SurveyType, VoteBucket } from "shared";
 import { AuthError, createSurvey } from "../api";
 import { AuthContext } from "./AdminLayout";
 
+const SCANNER_IDS = ["1", "2", "3", "4"];
+
+interface CreateBucket {
+	label: string;
+	scannerIds: string[];
+}
+
 interface Props {
 	onClose: () => void;
 	onCreate: (survey: SurveyResponse) => void;
@@ -12,7 +19,10 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 	const { markUnauthorized } = useContext(AuthContext);
 	const [name, setName] = useState("");
 	const [type, setType] = useState<SurveyType>("vote");
-	const [buckets, setBuckets] = useState<string[]>(["", ""]);
+	const [buckets, setBuckets] = useState<CreateBucket[]>([
+		{ label: "", scannerIds: [] },
+		{ label: "", scannerIds: [] },
+	]);
 	const [pinLifetime, setPinLifetime] = useState(300);
 	const [rescanCooldown, setRescanCooldown] = useState(300);
 	const [submitting, setSubmitting] = useState(false);
@@ -26,9 +36,9 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 			const config =
 				type === "vote"
 					? {
-							buckets: buckets.map<VoteBucket>((label, i) => ({
-								label,
-								scannerIds: [String(i + 1)],
+							buckets: buckets.map<VoteBucket>((b) => ({
+								label: b.label,
+								scannerIds: b.scannerIds,
 							})),
 						}
 					: { pinLifetimeSeconds: pinLifetime, rescanCooldownSeconds: rescanCooldown };
@@ -40,6 +50,19 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 		} finally {
 			setSubmitting(false);
 		}
+	}
+
+	function toggleScanner(bucketIdx: number, sid: string, checked: boolean) {
+		setBuckets((prev) =>
+			prev.map((b, idx) => {
+				if (checked) {
+					if (idx === bucketIdx) return { ...b, scannerIds: [...b.scannerIds, sid] };
+					return { ...b, scannerIds: b.scannerIds.filter((s) => s !== sid) };
+				}
+				if (idx === bucketIdx) return { ...b, scannerIds: b.scannerIds.filter((s) => s !== sid) };
+				return b;
+			}),
+		);
 	}
 
 	return (
@@ -87,29 +110,41 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 								<span className="text-sm font-medium text-gray-700">Buckets</span>
 								<button
 									type="button"
-									onClick={() => setBuckets((prev) => [...prev, ""])}
+									onClick={() => setBuckets((prev) => [...prev, { label: "", scannerIds: [] }])}
 									className="text-xs text-blue-600 hover:underline"
 								>
 									+ Add bucket
 								</button>
 							</div>
-							<div className="flex flex-col gap-2">
-								{buckets.map((label, i) => (
+							<div className="flex flex-col gap-3">
+								{buckets.map((bucket, i) => (
 									<div key={i} className="flex items-center gap-2">
-										<span className="text-xs text-gray-400 w-5 shrink-0 text-right">
-											{i + 1}
-										</span>
 										<input
 											type="text"
 											placeholder={`Bucket ${i + 1} label`}
-											value={label}
+											value={bucket.label}
 											onChange={(e) =>
 												setBuckets((prev) =>
-													prev.map((b, idx) => (idx === i ? e.target.value : b)),
+													prev.map((b, idx) =>
+														idx === i ? { ...b, label: e.target.value } : b,
+													),
 												)
 											}
 											className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 										/>
+										<div className="flex items-center gap-1">
+											{SCANNER_IDS.map((sid) => (
+												<label key={sid} className="flex items-center gap-0.5 cursor-pointer select-none">
+													<input
+														type="checkbox"
+														checked={bucket.scannerIds.includes(sid)}
+														onChange={(e) => toggleScanner(i, sid, e.target.checked)}
+														className="accent-blue-600"
+													/>
+													<span className="text-xs text-gray-500">{sid}</span>
+												</label>
+											))}
+										</div>
 										{buckets.length > 1 && (
 											<button
 												type="button"
@@ -124,9 +159,6 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 									</div>
 								))}
 							</div>
-							<p className="text-xs text-gray-400 mt-2">
-								Scanner {buckets.map((_, i) => i + 1).join(", ")} assigned by position
-							</p>
 						</div>
 					)}
 

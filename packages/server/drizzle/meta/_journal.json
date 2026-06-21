@@ -15,6 +15,13 @@
       "when": 1782037305656,
       "tag": "0001_soft_shard",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782043609193,
+      "tag": "0002_modern_colleen_wing",
+      "breakpoints": true
     }
   ]
 }
