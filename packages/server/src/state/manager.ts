@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import type { ServerWsMessage, SurveyConfig } from "shared";
 import { db } from "../db/index.js";
-import { logger } from "../logger.js";
 import { scanEvents, surveys, tagMappings } from "../db/schema.js";
+import { logger } from "../logger.js";
 import { getHandler } from "../surveys/registry.js";
 import type { DbSurvey } from "../surveys/types.js";
 import type { WsManager } from "../ws/manager.js";
@@ -38,7 +38,12 @@ export class StateManager {
 			this.active.set(survey.id, { survey, state });
 			this.scheduleTimers(survey);
 			logger.info(
-				{ surveyId: survey.id, name: survey.name, type: survey.type, events: events.length },
+				{
+					surveyId: survey.id,
+					name: survey.name,
+					type: survey.type,
+					events: events.length,
+				},
 				"state: rebuilt survey from DB",
 			);
 		}
@@ -76,9 +81,19 @@ export class StateManager {
 		const state = getHandler(survey.type).buildState(survey, [], allMappings);
 		this.active.set(survey.id, { survey, state });
 		this.scheduleTimers(survey);
-		const displayState = getHandler(survey.type).toDisplayState(state, survey.config as SurveyConfig);
-		this.ws.broadcast(survey.id, { type: "state", surveyId: survey.id, data: displayState });
-		logger.info({ surveyId: survey.id, name: survey.name, type: survey.type }, "state: survey activated");
+		const displayState = getHandler(survey.type).toDisplayState(
+			state,
+			survey.config as SurveyConfig,
+		);
+		this.ws.broadcast(survey.id, {
+			type: "state",
+			surveyId: survey.id,
+			data: displayState,
+		});
+		logger.info(
+			{ surveyId: survey.id, name: survey.name, type: survey.type },
+			"state: survey activated",
+		);
 	}
 
 	async endSurvey(surveyId: string) {
@@ -97,16 +112,21 @@ export class StateManager {
 
 	async processScan({
 		surveyId,
+		deviceId,
 		scannerId,
 		tagId,
 	}: {
 		surveyId: string;
+		deviceId: string;
 		scannerId: string;
 		tagId: string;
 	}) {
 		const entry = this.active.get(surveyId);
 		if (!entry) {
-			logger.warn({ surveyId, scannerId, tagId }, "scan: survey not found or not active");
+			logger.warn(
+				{ surveyId, scannerId, tagId },
+				"scan: survey not found or not active",
+			);
 			return { error: "not_found" as const };
 		}
 
@@ -121,6 +141,7 @@ export class StateManager {
 
 		await db.insert(scanEvents).values({
 			surveyId,
+			deviceId,
 			scannerId,
 			tagId,
 			accepted: result.accepted,

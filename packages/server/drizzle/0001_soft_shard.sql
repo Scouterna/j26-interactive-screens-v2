@@ -1,0 +1,2 @@
+ALTER TABLE "scan_events" ADD COLUMN "device_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "scan_events" ADD CONSTRAINT "scan_events_device_id_devices_id_fk" FOREIGN KEY ("device_id") REFERENCES "public"."devices"("id") ON DELETE no action ON UPDATE no action;

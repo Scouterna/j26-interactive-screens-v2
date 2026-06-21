@@ -30,6 +30,9 @@ export const scanEvents = pgTable("scan_events", {
 	surveyId: uuid("survey_id")
 		.notNull()
 		.references(() => surveys.id),
+	deviceId: uuid("device_id")
+		.notNull()
+		.references(() => devices.id),
 	scannerId: text("scanner_id").notNull(),
 	tagId: text("tag_id").notNull(),
 	scannedAt: timestamp("scanned_at").notNull().defaultNow(),
