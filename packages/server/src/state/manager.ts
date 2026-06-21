@@ -215,11 +215,17 @@ export class StateManager {
 			return { type: "state", surveyId, data: displayState };
 		}
 		const [survey] = await db
-			.select({ status: surveys.status })
+			.select()
 			.from(surveys)
 			.where(eq(surveys.id, surveyId));
 		if (survey?.status === "ended") {
-			return { type: "survey_ended", surveyId, data: null };
+			const [allMappings, events] = await Promise.all([
+				db.select().from(tagMappings),
+				db.select().from(scanEvents).where(eq(scanEvents.surveyId, surveyId)),
+			]);
+			const state = getHandler(survey.type).buildState(survey, events, allMappings);
+			const data = getHandler(survey.type).toDisplayState(state, survey.config as SurveyConfig);
+			return { type: "survey_ended", surveyId, data };
 		}
 		if (survey?.status === "archived") {
 			return { type: "survey_archived", surveyId, data: null };
