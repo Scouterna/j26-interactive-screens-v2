@@ -65,6 +65,7 @@ export function surveysRoutes(stateManager: StateManager) {
 		if (!s) return c.json({ error: "Not found" }, 404);
 		if (body.status === "active") await stateManager.activateSurvey(s);
 		if (body.status === "ended") await stateManager.endSurvey(s.id);
+		if (body.status === "archived") await stateManager.archiveSurvey(s.id);
 		return c.json(s);
 	});
 

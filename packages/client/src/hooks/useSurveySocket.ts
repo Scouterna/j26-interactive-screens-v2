@@ -5,6 +5,7 @@ import { BASE_PATH } from "../config";
 export function useSurveySocket(surveyId: string) {
 	const [displayState, setDisplayState] = useState<DisplayState | null>(null);
 	const [ended, setEnded] = useState(false);
+	const [archived, setArchived] = useState(false);
 	const unmountedRef = useRef(false);
 	const backoffRef = useRef(1000);
 
@@ -29,8 +30,12 @@ export function useSurveySocket(surveyId: string) {
 				if (msg.type === "state" || msg.type === "update") {
 					setDisplayState(msg.data);
 					setEnded(false);
+					setArchived(false);
 				} else if (msg.type === "survey_ended") {
+					if (msg.data) setDisplayState(msg.data);
 					setEnded(true);
+				} else if (msg.type === "survey_archived") {
+					setArchived(true);
 				}
 			};
 
@@ -50,5 +55,5 @@ export function useSurveySocket(surveyId: string) {
 		};
 	}, [surveyId]);
 
-	return { displayState, ended };
+	return { displayState, ended, archived };
 }

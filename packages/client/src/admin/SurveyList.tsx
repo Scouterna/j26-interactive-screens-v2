@@ -9,6 +9,7 @@ const STATUS_CLASSES: Record<SurveyStatus, string> = {
 	active: "bg-green-100 text-green-700",
 	draft: "bg-amber-100 text-amber-700",
 	ended: "bg-red-100 text-red-700",
+	archived: "bg-purple-100 text-purple-700",
 };
 
 export default function SurveyList() {
@@ -35,8 +36,9 @@ export default function SurveyList() {
 		}
 	}
 
-	const activesurveys = (surveys ?? []).filter((s) => s.status !== "ended");
+	const activeSurveys = (surveys ?? []).filter((s) => s.status !== "ended" && s.status !== "archived");
 	const endedSurveys = (surveys ?? []).filter((s) => s.status === "ended");
+	const archivedSurveys = (surveys ?? []).filter((s) => s.status === "archived");
 
 	function renderTable(rows: SurveyResponse[], emptyText: string) {
 		return (
@@ -129,14 +131,23 @@ export default function SurveyList() {
 				</button>
 			</div>
 
-			{renderTable(activesurveys, "No surveys yet")}
+			{renderTable(activeSurveys, "No surveys yet")}
 
 			{endedSurveys.length > 0 && (
 				<div className="mt-8">
 					<h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-						Ended surveys
+						Voting closed
 					</h2>
 					{renderTable(endedSurveys, "")}
+				</div>
+			)}
+
+			{archivedSurveys.length > 0 && (
+				<div className="mt-8">
+					<h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+						Archived
+					</h2>
+					{renderTable(archivedSurveys, "")}
 				</div>
 			)}
 

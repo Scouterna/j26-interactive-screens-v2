@@ -100,17 +100,36 @@ export class StateManager {
 	}
 
 	async endSurvey(surveyId: string) {
+		const entry = this.active.get(surveyId);
+		const finalState = entry
+			? getHandler(entry.survey.type).toDisplayState(
+					entry.state,
+					entry.survey.config as SurveyConfig,
+				)
+			: null;
 		await db
 			.update(surveys)
 			.set({ status: "ended" })
 			.where(eq(surveys.id, surveyId));
-		this.ws.broadcast(surveyId, { type: "survey_ended", surveyId, data: null });
+		this.ws.broadcast(surveyId, { type: "survey_ended", surveyId, data: finalState });
 		clearInterval(this.cleanupTimers.get(surveyId));
 		clearTimeout(this.endTimers.get(surveyId));
 		this.cleanupTimers.delete(surveyId);
 		this.endTimers.delete(surveyId);
 		this.active.delete(surveyId);
 		logger.info({ surveyId }, "state: survey ended");
+	}
+
+	async archiveSurvey(surveyId: string) {
+		if (this.active.has(surveyId)) {
+			clearInterval(this.cleanupTimers.get(surveyId));
+			clearTimeout(this.endTimers.get(surveyId));
+			this.cleanupTimers.delete(surveyId);
+			this.endTimers.delete(surveyId);
+			this.active.delete(surveyId);
+		}
+		this.ws.broadcast(surveyId, { type: "survey_archived", surveyId, data: null });
+		logger.info({ surveyId }, "state: survey archived");
 	}
 
 	async processScan({
@@ -201,6 +220,9 @@ export class StateManager {
 			.where(eq(surveys.id, surveyId));
 		if (survey?.status === "ended") {
 			return { type: "survey_ended", surveyId, data: null };
+		}
+		if (survey?.status === "archived") {
+			return { type: "survey_archived", surveyId, data: null };
 		}
 		return null;
 	}

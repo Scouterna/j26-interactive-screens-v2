@@ -204,12 +204,13 @@ export default function SurveyDetail() {
 }
 
 
-const STATUSES: SurveyStatus[] = ["draft", "active", "ended"];
+const STATUSES: SurveyStatus[] = ["draft", "active", "ended", "archived"];
 
 const STATUS_ACTIVE: Record<SurveyStatus, string> = {
 	draft: "bg-amber-100 text-amber-700 font-medium",
 	active: "bg-green-100 text-green-700 font-medium",
 	ended: "bg-red-100 text-red-700 font-medium",
+	archived: "bg-purple-100 text-purple-700 font-medium",
 };
 
 const STATUS_IDLE: string = "text-gray-600 hover:bg-gray-50";

@@ -1,5 +1,5 @@
 export type SurveyType = "vote" | "map";
-export type SurveyStatus = "active" | "ended" | "draft";
+export type SurveyStatus = "active" | "ended" | "archived" | "draft";
 
 export interface VoteBucket {
 	label: string;
@@ -37,7 +37,8 @@ export type ClientWsMessage = { type: "subscribe"; surveyId: string };
 export type ServerWsMessage =
 	| { type: "state"; surveyId: string; data: DisplayState }
 	| { type: "update"; surveyId: string; data: DisplayState }
-	| { type: "survey_ended"; surveyId: string; data: null };
+	| { type: "survey_ended"; surveyId: string; data: DisplayState | null }
+	| { type: "survey_archived"; surveyId: string; data: null };
 
 export interface SurveyResponse {
 	id: string;
