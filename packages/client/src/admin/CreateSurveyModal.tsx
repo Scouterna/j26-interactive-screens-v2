@@ -19,10 +19,7 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 	const { markUnauthorized } = useContext(AuthContext);
 	const [name, setName] = useState("");
 	const [type, setType] = useState<SurveyType>("vote");
-	const [buckets, setBuckets] = useState<CreateBucket[]>([
-		{ label: "", scannerIds: [] },
-		{ label: "", scannerIds: [] },
-	]);
+	const [buckets, setBuckets] = useState<CreateBucket[]>([{ label: "", scannerIds: ["1"] }]);
 	const [pinLifetime, setPinLifetime] = useState(300);
 	const [rescanCooldown, setRescanCooldown] = useState(300);
 	const [submitting, setSubmitting] = useState(false);
@@ -42,7 +39,7 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 							})),
 						}
 					: { pinLifetimeSeconds: pinLifetime, rescanCooldownSeconds: rescanCooldown };
-			const survey = await createSurvey({ name, type, config, status: "active" });
+			const survey = await createSurvey({ name, type, config, status: "draft" });
 			onCreate(survey);
 		} catch (err) {
 			if (err instanceof AuthError) markUnauthorized();
@@ -106,16 +103,7 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 
 					{type === "vote" && (
 						<div>
-							<div className="flex items-center justify-between mb-2">
-								<span className="text-sm font-medium text-gray-700">Buckets</span>
-								<button
-									type="button"
-									onClick={() => setBuckets((prev) => [...prev, { label: "", scannerIds: [] }])}
-									className="text-xs text-blue-600 hover:underline"
-								>
-									+ Add bucket
-								</button>
-							</div>
+							<span className="block text-sm font-medium text-gray-700 mb-2">Buckets</span>
 							<div className="flex flex-col gap-3">
 								{buckets.map((bucket, i) => (
 									<div key={i} className="flex items-center gap-2">
@@ -145,18 +133,33 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 												</label>
 											))}
 										</div>
-										{buckets.length > 1 && (
-											<button
-												type="button"
-												onClick={() =>
-													setBuckets((prev) => prev.filter((_, idx) => idx !== i))
-												}
-												className="text-gray-400 hover:text-red-500 text-sm leading-none"
-											>
-												✕
-											</button>
-										)}
+										<button
+										type="button"
+										onClick={() =>
+											setBuckets((prev) => prev.filter((_, idx) => idx !== i))
+										}
+										className={`text-gray-400 hover:text-red-500 text-sm leading-none ${buckets.length === 1 ? "invisible" : ""}`}
+									>
+										✕
+									</button>
 									</div>
+								))}
+								{Array.from({ length: 4 - buckets.length }).map((_, i) => (
+									<button
+										key={i}
+										type="button"
+										onClick={() => {
+											const usedIds = new Set(buckets.flatMap((b) => b.scannerIds));
+											const nextFree = SCANNER_IDS.find((s) => !usedIds.has(s)) ?? null;
+											setBuckets((prev) => [
+												...prev,
+												{ label: "", scannerIds: nextFree ? [nextFree] : [] },
+											]);
+										}}
+										className="flex items-center justify-center w-full rounded border border-dashed border-gray-300 py-1.5 text-sm text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors"
+									>
+										+ Add bucket
+									</button>
 								))}
 							</div>
 						</div>

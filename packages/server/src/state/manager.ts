@@ -77,8 +77,11 @@ export class StateManager {
 	}
 
 	async activateSurvey(survey: DbSurvey) {
-		const allMappings = await db.select().from(tagMappings);
-		const state = getHandler(survey.type).buildState(survey, [], allMappings);
+		const [allMappings, events] = await Promise.all([
+			db.select().from(tagMappings),
+			db.select().from(scanEvents).where(eq(scanEvents.surveyId, survey.id)),
+		]);
+		const state = getHandler(survey.type).buildState(survey, events, allMappings);
 		this.active.set(survey.id, { survey, state });
 		this.scheduleTimers(survey);
 		const displayState = getHandler(survey.type).toDisplayState(

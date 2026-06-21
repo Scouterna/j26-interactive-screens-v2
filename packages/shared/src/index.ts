@@ -61,7 +61,6 @@ export interface DeviceResponse {
 	createdAt: string;
 }
 export type ScanIngestionRequest = {
-	surveyId?: string;
 	scannerId: string;
 	tagId: string;
 }[];

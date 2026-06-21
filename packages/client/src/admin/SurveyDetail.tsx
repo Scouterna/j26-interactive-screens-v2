@@ -248,20 +248,18 @@ export default function SurveyDetail() {
 													);
 												})}
 											</div>
-											{edit.buckets.length > 1 && (
-												<button
-													type="button"
-													onClick={() =>
-														setEdit({
-															...edit,
-															buckets: edit.buckets.filter((_, idx) => idx !== i),
-														})
-													}
-													className="text-gray-400 hover:text-red-500 text-sm leading-none"
-												>
-													✕
-												</button>
-											)}
+											<button
+											type="button"
+											onClick={() =>
+												setEdit({
+													...edit,
+													buckets: edit.buckets.filter((_, idx) => idx !== i),
+												})
+											}
+											className={`text-gray-400 hover:text-red-500 text-sm leading-none ${edit.buckets.length === 1 ? "invisible" : ""}`}
+										>
+											✕
+										</button>
 										</div>
 									))}
 								</div>
