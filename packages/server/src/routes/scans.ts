@@ -22,12 +22,18 @@ export function scansRoutes(stateManager: StateManager) {
 		const surveyId = device?.surveyId;
 		if (!surveyId) {
 			logger.warn({ deviceId }, "scan: device has no survey assigned");
-			return c.json({ ok: true });
+			return c.json({ error: "no_survey" }, 422);
 		}
 
-		await Promise.all(
+		const results = await Promise.all(
 			body.map((scan) => stateManager.processScan({ ...scan, surveyId, deviceId })),
 		);
+
+		if (results.some((r) => "error" in r && r.error === "not_found")) {
+			logger.warn({ deviceId, surveyId }, "scan: survey not active");
+			return c.json({ error: "survey_not_active" }, 422);
+		}
+
 		return c.json({ ok: true });
 	});
 
