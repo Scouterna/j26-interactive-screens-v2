@@ -1,9 +1,10 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useContext, useEffect, useState } from "react";
 import type { MapSurveyConfig, SurveyResponse, SurveyStatus, VoteSurveyConfig } from "shared";
-import { AuthError, assignDeviceSurvey, deleteSurvey, fetchDevices, fetchSurvey, updateSurvey, type DeviceItem } from "../api";
+import { AuthError, deleteSurvey, fetchDevices, fetchSurvey, updateSurvey, type DeviceItem } from "../api";
 import { BASE_PATH } from "../config";
 import { AuthContext } from "./AdminLayout";
+import DeviceAssignModal from "./DeviceAssignModal";
 
 const STATUS_CLASSES: Record<SurveyStatus, string> = {
 	active: "bg-green-100 text-green-700",
@@ -57,6 +58,7 @@ export default function SurveyDetail() {
 	const [copied, setCopied] = useState(false);
 	const [edit, setEdit] = useState<EditState | null>(null);
 	const [saving, setSaving] = useState(false);
+	const [showDeviceModal, setShowDeviceModal] = useState(false);
 
 	const screenPath = `${BASE_PATH}/display/${id}`;
 	const screenUrl = `${window.location.origin}${screenPath}`;
@@ -80,24 +82,6 @@ export default function SurveyDetail() {
 				if (err instanceof AuthError) markUnauthorized();
 			});
 	}, [id, markUnauthorized]);
-
-	async function handleAssignDevice(deviceId: string) {
-		try {
-			const updated = await assignDeviceSurvey(deviceId, id);
-			setDevices((prev) => prev.map((d) => (d.id === deviceId ? updated : d)));
-		} catch (err) {
-			if (err instanceof AuthError) markUnauthorized();
-		}
-	}
-
-	async function handleUnassignDevice(deviceId: string) {
-		try {
-			const updated = await assignDeviceSurvey(deviceId, null);
-			setDevices((prev) => prev.map((d) => (d.id === deviceId ? updated : d)));
-		} catch (err) {
-			if (err instanceof AuthError) markUnauthorized();
-		}
-	}
 
 	function startEdit(s: SurveyResponse) {
 		const voteConfig = s.type === "vote" ? (s.config as VoteSurveyConfig) : null;
@@ -393,12 +377,43 @@ export default function SurveyDetail() {
 				)}
 			</div>
 
-			<DevicesSection
-				surveyId={id}
-				devices={devices}
-				onAssign={(deviceId) => void handleAssignDevice(deviceId)}
-				onUnassign={(deviceId) => void handleUnassignDevice(deviceId)}
-			/>
+			<div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+				<div className="flex items-center justify-between mb-3">
+					<h2 className="text-sm font-medium text-gray-700">Devices</h2>
+					<button
+						type="button"
+						onClick={() => setShowDeviceModal(true)}
+						className="text-xs text-blue-600 hover:text-blue-800"
+					>
+						Manage
+					</button>
+				</div>
+				{devices.filter((d) => d.surveyId === id).length === 0 ? (
+					<p className="text-sm text-gray-400">No devices assigned.</p>
+				) : (
+					<ul className="flex flex-col gap-1">
+						{devices
+							.filter((d) => d.surveyId === id)
+							.map((d) => (
+								<li key={d.id} className="text-sm text-gray-900">
+									{d.name}
+								</li>
+							))}
+					</ul>
+				)}
+			</div>
+
+			{showDeviceModal && (
+				<DeviceAssignModal
+					surveyId={id}
+					devices={devices}
+					onClose={() => setShowDeviceModal(false)}
+					onApplied={(updated) => {
+						setDevices(updated);
+						setShowDeviceModal(false);
+					}}
+				/>
+			)}
 
 			<div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
 				<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -419,64 +434,6 @@ export default function SurveyDetail() {
 	);
 }
 
-function DevicesSection({
-	surveyId,
-	devices,
-	onAssign,
-	onUnassign,
-}: {
-	surveyId: string;
-	devices: DeviceItem[];
-	onAssign: (deviceId: string) => void;
-	onUnassign: (deviceId: string) => void;
-}) {
-	const assigned = devices.filter((d) => d.surveyId === surveyId);
-	const available = devices.filter((d) => d.surveyId !== surveyId);
-
-	return (
-		<div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-			<h2 className="text-sm font-medium text-gray-700 mb-3">Devices</h2>
-
-			{assigned.length === 0 ? (
-				<p className="text-sm text-gray-400 mb-3">No devices assigned.</p>
-			) : (
-				<ul className="mb-3 flex flex-col gap-1">
-					{assigned.map((d) => (
-						<li key={d.id} className="flex items-center justify-between text-sm">
-							<span className="text-gray-900">{d.name}</span>
-							<button
-								type="button"
-								onClick={() => onUnassign(d.id)}
-								className="text-xs text-red-500 hover:text-red-700"
-							>
-								Remove
-							</button>
-						</li>
-					))}
-				</ul>
-			)}
-
-			<select
-				defaultValue=""
-				disabled={available.length === 0}
-				onChange={(e) => {
-					if (e.target.value) onAssign(e.target.value);
-					e.target.value = "";
-				}}
-				className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-			>
-				<option value="" disabled>
-					{available.length === 0 ? "No devices available" : "Add device…"}
-				</option>
-				{available.map((d) => (
-					<option key={d.id} value={d.id}>
-						{d.name}
-					</option>
-				))}
-			</select>
-		</div>
-	);
-}
 
 const STATUSES: SurveyStatus[] = ["draft", "active", "ended"];
 

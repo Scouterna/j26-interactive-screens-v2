@@ -2,7 +2,6 @@ import { useContext, useEffect, useRef, useState } from "react";
 import type { CreateDeviceResponse } from "shared";
 import {
 	AuthError,
-	assignDeviceSurvey,
 	createDevice,
 	deleteDevice,
 	fetchDevices,
@@ -15,7 +14,7 @@ import { AuthContext } from "./AdminLayout";
 export default function DeviceList() {
 	const { markUnauthorized } = useContext(AuthContext);
 	const [devices, setDevices] = useState<DeviceItem[]>([]);
-	const [surveys, setSurveys] = useState<{ id: string; name: string }[]>([]);
+	const [surveyNames, setSurveyNames] = useState<Record<string, string>>({});
 	const [newName, setNewName] = useState("");
 	const [newKey, setNewKey] = useState<CreateDeviceResponse | null>(null);
 	const [creating, setCreating] = useState(false);
@@ -30,7 +29,11 @@ export default function DeviceList() {
 				if (err instanceof AuthError) markUnauthorized();
 			});
 		fetchSurveys()
-			.then((all) => setSurveys(all.filter((s) => s.status === "active").map((s) => ({ id: s.id, name: s.name }))))
+			.then((all) => {
+				const map: Record<string, string> = {};
+				for (const s of all) map[s.id] = s.name;
+				setSurveyNames(map);
+			})
 			.catch((err: unknown) => {
 				if (err instanceof AuthError) markUnauthorized();
 			});
@@ -79,15 +82,6 @@ export default function DeviceList() {
 		try {
 			await deleteDevice(id);
 			setDevices((prev) => prev.filter((d) => d.id !== id));
-		} catch (err) {
-			if (err instanceof AuthError) markUnauthorized();
-		}
-	}
-
-	async function handleSurveyChange(deviceId: string, surveyId: string | null) {
-		try {
-			const updated = await assignDeviceSurvey(deviceId, surveyId);
-			setDevices((prev) => prev.map((d) => (d.id === deviceId ? updated : d)));
 		} catch (err) {
 			if (err instanceof AuthError) markUnauthorized();
 		}
@@ -162,21 +156,10 @@ export default function DeviceList() {
 										<span className="text-gray-900">{device.name}</span>
 									)}
 								</td>
-								<td className="px-4 py-2">
-									<select
-										value={device.surveyId ?? ""}
-										onChange={(e) =>
-											void handleSurveyChange(device.id, e.target.value || null)
-										}
-										className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-									>
-										<option value="">— none —</option>
-										{surveys.map((s) => (
-											<option key={s.id} value={s.id}>
-												{s.name}
-											</option>
-										))}
-									</select>
+								<td className="px-4 py-2 text-sm text-gray-600">
+									{device.surveyId
+										? (surveyNames[device.surveyId] ?? "—")
+										: <span className="text-gray-400">None</span>}
 								</td>
 								<td className="px-4 py-3 text-gray-600">
 									{new Date(device.createdAt).toLocaleDateString()}
