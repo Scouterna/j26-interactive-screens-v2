@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import AdminLayout from "./admin/AdminLayout";
 import DeviceList from "./admin/DeviceList";
 import SurveyDetail from "./admin/SurveyDetail";
+import SurveyEdit from "./admin/SurveyEdit";
 import SurveyList from "./admin/SurveyList";
 import TagsPage from "./admin/TagsPage";
 import { BASE_PATH } from "./config";
@@ -63,6 +64,12 @@ const surveyDetailRoute = createRoute({
 	component: SurveyDetail,
 });
 
+const surveyEditRoute = createRoute({
+	getParentRoute: () => adminRoute,
+	path: "surveys/$id/edit",
+	component: SurveyEdit,
+});
+
 const devicesRoute = createRoute({
 	getParentRoute: () => adminRoute,
 	path: "devices",
@@ -86,6 +93,7 @@ const routeTree = rootRoute.addChildren([
 	adminRoute.addChildren([
 		adminIndexRoute,
 		surveyDetailRoute,
+		surveyEditRoute,
 		devicesRoute,
 		tagsRoute,
 	]),
