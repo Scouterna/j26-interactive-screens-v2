@@ -5,6 +5,12 @@ import { AuthContext } from "./AdminLayout";
 
 const SCANNER_IDS = ["1", "2", "3", "4"];
 
+function toLocalDatetimeInput(utc: string): string {
+	const d = new Date(utc);
+	const pad = (n: number) => String(n).padStart(2, "0");
+	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 interface CreateBucket {
 	label: string;
 	scannerIds: string[];
@@ -22,6 +28,7 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 	const [buckets, setBuckets] = useState<CreateBucket[]>([{ label: "", scannerIds: ["1"] }]);
 	const [pinLifetime, setPinLifetime] = useState(300);
 	const [rescanCooldown, setRescanCooldown] = useState(300);
+	const [endsAt, setEndsAt] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +46,13 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 							})),
 						}
 					: { pinLifetimeSeconds: pinLifetime, rescanCooldownSeconds: rescanCooldown };
-			const survey = await createSurvey({ name, type, config, status: "draft" });
+			const survey = await createSurvey({
+					name,
+					type,
+					config,
+					status: "draft",
+					endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
+				});
 			onCreate(survey);
 		} catch (err) {
 			if (err instanceof AuthError) markUnauthorized();
@@ -80,6 +93,15 @@ export default function CreateSurveyModal({ onClose, onCreate }: Props) {
 							required
 							value={name}
 							onChange={(e) => setName(e.target.value)}
+							className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+					</Field>
+
+					<Field label="Ends at (optional)">
+						<input
+							type="datetime-local"
+							value={endsAt}
+							onChange={(e) => setEndsAt(e.target.value)}
 							className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 						/>
 					</Field>

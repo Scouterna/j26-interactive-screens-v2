@@ -13,6 +13,12 @@ const STATUS_CLASSES: Record<SurveyStatus, string> = {
 
 const SCANNER_IDS = ["1", "2", "3", "4"];
 
+function toLocalDatetimeInput(utc: string): string {
+	const d = new Date(utc);
+	const pad = (n: number) => String(n).padStart(2, "0");
+	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 interface EditBucket {
 	label: string;
 	scannerIds: string[];
@@ -23,6 +29,7 @@ interface EditState {
 	buckets: EditBucket[];
 	pinLifetime: number;
 	rescanCooldown: number;
+	endsAt: string;
 }
 
 export default function SurveyDetail() {
@@ -84,6 +91,7 @@ export default function SurveyDetail() {
 			buckets: voteConfig?.buckets.map((b) => ({ label: b.label, scannerIds: b.scannerIds })) ?? [],
 			pinLifetime: mapConfig?.pinLifetimeSeconds ?? 300,
 			rescanCooldown: mapConfig?.rescanCooldownSeconds ?? 300,
+			endsAt: s.endsAt ? toLocalDatetimeInput(s.endsAt) : "",
 		});
 	}
 
@@ -103,7 +111,11 @@ export default function SurveyDetail() {
 							pinLifetimeSeconds: edit.pinLifetime,
 							rescanCooldownSeconds: edit.rescanCooldown,
 						};
-			const updated = await updateSurvey(id, { name: edit.name, config });
+			const updated = await updateSurvey(id, {
+					name: edit.name,
+					config,
+					endsAt: edit.endsAt ? new Date(edit.endsAt).toISOString() : null,
+				});
 			setSurvey(updated);
 			setEdit(null);
 		} catch (err) {
@@ -189,6 +201,27 @@ export default function SurveyDetail() {
 								onChange={(e) => setEdit({ ...edit, name: e.target.value })}
 								className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 							/>
+						</div>
+
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">Ends at (optional)</label>
+							<div className="flex gap-2">
+								<input
+									type="datetime-local"
+									value={edit.endsAt}
+									onChange={(e) => setEdit({ ...edit, endsAt: e.target.value })}
+									className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+								/>
+								{edit.endsAt && (
+									<button
+										type="button"
+										onClick={() => setEdit({ ...edit, endsAt: "" })}
+										className="px-3 py-2 text-sm text-gray-400 hover:text-red-500"
+									>
+										✕
+									</button>
+								)}
+							</div>
 						</div>
 
 						{voteConfig && (
@@ -332,6 +365,11 @@ export default function SurveyDetail() {
 								<span>Pin lifetime: {mapConfig.pinLifetimeSeconds}s</span>
 								<span>Rescan cooldown: {mapConfig.rescanCooldownSeconds}s</span>
 							</div>
+						)}
+						{survey.endsAt && (
+							<p className="text-sm text-gray-500 mt-2">
+								Ends at: {new Date(survey.endsAt).toLocaleString()}
+							</p>
 						)}
 					</>
 				)}

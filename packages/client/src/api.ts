@@ -36,7 +36,7 @@ export interface CreateSurveyBody {
 	type: SurveyType;
 	config: SurveyConfig;
 	status?: SurveyStatus;
-	endsAt?: string;
+	endsAt?: string | null;
 }
 
 export async function createSurvey(body: CreateSurveyBody): Promise<SurveyResponse> {

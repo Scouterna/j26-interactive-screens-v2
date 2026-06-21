@@ -53,7 +53,9 @@ export function surveysRoutes(stateManager: StateManager) {
 		const body = await c.req.json<Record<string, unknown>>();
 		const patch = {
 			...body,
-			endsAt: body.endsAt ? new Date(body.endsAt as string) : undefined,
+			endsAt: body.endsAt !== undefined
+				? (body.endsAt ? new Date(body.endsAt as string) : null)
+				: undefined,
 		};
 		const [s] = await db
 			.update(surveys)
