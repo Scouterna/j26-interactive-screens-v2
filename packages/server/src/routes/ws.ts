@@ -14,20 +14,13 @@ export function wsRoutes(
 	app.get(
 		"/",
 		upgradeWebSocket(() => ({
-			onMessage(event, ws) {
+			async onMessage(event, ws) {
 				try {
 					const msg = JSON.parse(String(event.data)) as ClientWsMessage;
 					if (msg.type !== "subscribe") return;
 					wsManager.subscribe(ws, msg.surveyId);
-					const state = stateManager.getDisplayState(msg.surveyId);
-					if (state)
-						ws.send(
-							JSON.stringify({
-								type: "state",
-								surveyId: msg.surveyId,
-								data: state,
-							}),
-						);
+					const msg_ = await stateManager.getSubscribeMessage(msg.surveyId);
+					if (msg_) ws.send(JSON.stringify(msg_));
 				} catch {
 					/* ignore malformed messages */
 				}

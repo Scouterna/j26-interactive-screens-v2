@@ -30,6 +30,21 @@ export function devicesRoutes() {
 		return c.json({ ...d, key: rawKey }, 201);
 	});
 
+	app.patch("/:id", adminAuth("write"), async (c) => {
+		const { name } = await c.req.json<{ name: string }>();
+		const [d] = await db
+			.update(devices)
+			.set({ name })
+			.where(eq(devices.id, c.req.param("id")))
+			.returning({
+				id: devices.id,
+				name: devices.name,
+				createdAt: devices.createdAt,
+			});
+		if (!d) return c.json({ error: "Not found" }, 404);
+		return c.json(d);
+	});
+
 	app.delete("/:id", adminAuth("write"), async (c) => {
 		await db.delete(devices).where(eq(devices.id, c.req.param("id")));
 		return c.json({ ok: true });

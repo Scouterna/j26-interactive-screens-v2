@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
-import type { SurveyConfig } from "shared";
+import type { ServerWsMessage, SurveyConfig } from "shared";
 import { db } from "../db/index.js";
+import { logger } from "../logger.js";
 import { scanEvents, surveys, tagMappings } from "../db/schema.js";
 import { getHandler } from "../surveys/registry.js";
 import type { DbSurvey } from "../surveys/types.js";
@@ -36,7 +37,12 @@ export class StateManager {
 			);
 			this.active.set(survey.id, { survey, state });
 			this.scheduleTimers(survey);
+			logger.info(
+				{ surveyId: survey.id, name: survey.name, type: survey.type, events: events.length },
+				"state: rebuilt survey from DB",
+			);
 		}
+		logger.info({ count: activeList.length }, "state: initialized");
 	}
 
 	private scheduleTimers(survey: DbSurvey) {
@@ -70,6 +76,9 @@ export class StateManager {
 		const state = getHandler(survey.type).buildState(survey, [], allMappings);
 		this.active.set(survey.id, { survey, state });
 		this.scheduleTimers(survey);
+		const displayState = getHandler(survey.type).toDisplayState(state, survey.config as SurveyConfig);
+		this.ws.broadcast(survey.id, { type: "state", surveyId: survey.id, data: displayState });
+		logger.info({ surveyId: survey.id, name: survey.name, type: survey.type }, "state: survey activated");
 	}
 
 	async endSurvey(surveyId: string) {
@@ -83,6 +92,7 @@ export class StateManager {
 		this.cleanupTimers.delete(surveyId);
 		this.endTimers.delete(surveyId);
 		this.active.delete(surveyId);
+		logger.info({ surveyId }, "state: survey ended");
 	}
 
 	async processScan({
@@ -95,7 +105,10 @@ export class StateManager {
 		tagId: string;
 	}) {
 		const entry = this.active.get(surveyId);
-		if (!entry) return { error: "not_found" as const };
+		if (!entry) {
+			logger.warn({ surveyId, scannerId, tagId }, "scan: survey not found or not active");
+			return { error: "not_found" as const };
+		}
 
 		const handler = getHandler(entry.survey.type);
 		const config = entry.survey.config as SurveyConfig;
@@ -114,12 +127,19 @@ export class StateManager {
 			rejectionReason: result.rejectionReason ?? null,
 		});
 
-		if (result.accepted)
+		if (result.accepted) {
 			this.ws.broadcast(surveyId, {
 				type: "update",
 				surveyId,
 				data: handler.toDisplayState(entry.state, config),
 			});
+			logger.debug({ surveyId, scannerId, tagId }, "scan: accepted");
+		} else {
+			logger.debug(
+				{ surveyId, scannerId, tagId, reason: result.rejectionReason },
+				"scan: rejected",
+			);
+		}
 
 		return {
 			accepted: result.accepted,
@@ -144,5 +164,20 @@ export class StateManager {
 			entry.state,
 			entry.survey.config as SurveyConfig,
 		);
+	}
+
+	async getSubscribeMessage(surveyId: string): Promise<ServerWsMessage | null> {
+		const displayState = this.getDisplayState(surveyId);
+		if (displayState) {
+			return { type: "state", surveyId, data: displayState };
+		}
+		const [survey] = await db
+			.select({ status: surveys.status })
+			.from(surveys)
+			.where(eq(surveys.id, surveyId));
+		if (survey?.status === "ended") {
+			return { type: "survey_ended", surveyId, data: null };
+		}
+		return null;
 	}
 }

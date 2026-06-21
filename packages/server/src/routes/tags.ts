@@ -1,5 +1,5 @@
 import { parse } from "csv-parse/sync";
-import { sql } from "drizzle-orm";
+import { countDistinct, count, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { adminAuth } from "../auth-admin.js";
 import { db } from "../db/index.js";
@@ -8,6 +8,16 @@ import type { StateManager } from "../state/manager.js";
 
 export function tagsRoutes(stateManager: StateManager) {
 	const app = new Hono();
+
+	app.get("/stats", adminAuth("read"), async (c) => {
+		const [row] = await db
+			.select({
+				tags: count(tagMappings.id),
+				groups: countDistinct(tagMappings.displayName),
+			})
+			.from(tagMappings);
+		return c.json({ tags: Number(row?.tags ?? 0), groups: Number(row?.groups ?? 0) });
+	});
 
 	app.post("/", adminAuth("write"), async (c) => {
 		const form = await c.req.formData();
