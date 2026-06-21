@@ -24,7 +24,7 @@ export default function VoteDisplay({ state }: { state: VoteDisplayState }) {
 				);
 			})}
 			<p className="text-center text-gray-500 text-sm mt-2">
-				{state.totalVotes} vote{state.totalVotes !== 1 ? "s" : ""}
+				{state.totalVotes} röst{state.totalVotes !== 1 ? "er" : ""}
 			</p>
 		</div>
 	);
