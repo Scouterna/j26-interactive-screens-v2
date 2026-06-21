@@ -19,6 +19,22 @@ function toLocalDatetimeInput(utc: string): string {
 	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function formatEndsAt(utc: string): string {
+	const d = new Date(utc);
+	const diffMs = d.getTime() - Date.now();
+	const date = d.toLocaleDateString("sv-SE", { day: "numeric", month: "long" });
+	const time = d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+	const label = `${date} ${time}`;
+
+	if (diffMs <= 0) return `Ended (${label})`;
+	const diffMin = Math.round(diffMs / 60_000);
+	if (diffMin < 60) return `Ends in ${diffMin} min (${label})`;
+	const diffHours = Math.round(diffMs / 3_600_000);
+	if (diffHours < 24) return `Ends in ${diffHours}h (${label})`;
+	const diffDays = Math.round(diffMs / 86_400_000);
+	return `Ends in ${diffDays}d (${label})`;
+}
+
 interface EditBucket {
 	label: string;
 	scannerIds: string[];
@@ -368,7 +384,7 @@ export default function SurveyDetail() {
 						)}
 						{survey.endsAt && (
 							<p className="text-sm text-gray-500 mt-2">
-								Ends at: {new Date(survey.endsAt).toLocaleString()}
+								{formatEndsAt(survey.endsAt)}
 							</p>
 						)}
 					</>
