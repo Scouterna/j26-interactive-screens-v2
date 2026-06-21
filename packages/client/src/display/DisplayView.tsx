@@ -1,5 +1,6 @@
 import { useParams } from "@tanstack/react-router";
 import type { VoteDisplayState } from "shared";
+import { useDaylight } from "../hooks/useDaylight";
 import { useSurveySocket } from "../hooks/useSurveySocket";
 import VoteDisplay from "./VoteDisplay";
 import VoteResults from "./VoteResults";
@@ -7,32 +8,35 @@ import VoteResults from "./VoteResults";
 export default function DisplayView() {
 	const { surveyId } = useParams({ strict: false }) as { surveyId: string };
 	const { displayState, ended, archived } = useSurveySocket(surveyId);
+	const daylight = useDaylight();
+
+	const bg = daylight ? "bg-white" : "bg-gray-950";
 
 	if (archived) {
-		return <div className="min-h-screen bg-gray-950" />;
+		return <div className={`min-h-screen ${bg}`} />;
 	}
 
 	if (ended && displayState?.type === "vote") {
 		return (
-			<div className="min-h-screen bg-gray-950 flex items-center justify-center">
-				<VoteResults state={displayState as VoteDisplayState} />
+			<div className={`min-h-screen ${bg} flex items-center justify-center`}>
+				<VoteResults state={displayState as VoteDisplayState} daylight={daylight} />
 			</div>
 		);
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center">
+		<div className={`min-h-screen ${bg} flex flex-col items-center justify-center`}>
 			{!displayState ? (
-				!ended && <p className="text-gray-700 text-xl">Ansluter…</p>
+				!ended && <p className={`text-xl ${daylight ? "text-gray-400" : "text-gray-700"}`}>Ansluter…</p>
 			) : displayState.type === "vote" ? (
-				<VoteDisplay state={displayState} />
+				<VoteDisplay state={displayState} daylight={daylight} />
 			) : (
-				<p className="text-gray-500 text-xl">
+				<p className={`text-xl ${daylight ? "text-gray-500" : "text-gray-500"}`}>
 					{displayState.pins.length} nål{displayState.pins.length !== 1 ? "ar" : ""} aktiv{displayState.pins.length !== 1 ? "a" : ""}
 				</p>
 			)}
 			{ended && (
-				<p className="text-gray-600 text-sm uppercase tracking-widest mt-8">
+				<p className={`text-sm uppercase tracking-widest mt-8 ${daylight ? "text-gray-400" : "text-gray-600"}`}>
 					Röstning avslutad
 				</p>
 			)}
