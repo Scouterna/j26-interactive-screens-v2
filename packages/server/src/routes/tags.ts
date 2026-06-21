@@ -1,10 +1,12 @@
 import { parse } from "csv-parse/sync";
-import { countDistinct, count, sql } from "drizzle-orm";
+import { count, countDistinct, ilike, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { adminAuth } from "../auth-admin.js";
 import { db } from "../db/index.js";
 import { tagMappings } from "../db/schema.js";
 import type { StateManager } from "../state/manager.js";
+
+const PAGE_SIZE = 50;
 
 export function tagsRoutes(stateManager: StateManager) {
 	const app = new Hono();
@@ -16,7 +18,49 @@ export function tagsRoutes(stateManager: StateManager) {
 				groups: countDistinct(tagMappings.displayName),
 			})
 			.from(tagMappings);
-		return c.json({ tags: Number(row?.tags ?? 0), groups: Number(row?.groups ?? 0) });
+		return c.json({
+			tags: Number(row?.tags ?? 0),
+			groups: Number(row?.groups ?? 0),
+		});
+	});
+
+	app.get("/", adminAuth("tags:read"), async (c) => {
+		const search = c.req.query("search")?.trim() ?? "";
+		const offset = Number(c.req.query("offset") ?? 0);
+		const where = search
+			? or(
+					ilike(tagMappings.tagId, `%${search}%`),
+					ilike(tagMappings.displayName, `%${search}%`),
+				)
+			: undefined;
+
+		const [rows, [totRow]] = await Promise.all([
+			db
+				.select()
+				.from(tagMappings)
+				.where(where)
+				.limit(PAGE_SIZE)
+				.offset(offset),
+			db
+				.select({ total: count(tagMappings.id) })
+				.from(tagMappings)
+				.where(where),
+		]);
+
+		return c.json({
+			rows,
+			total: Number(totRow?.total ?? 0),
+			pageSize: PAGE_SIZE,
+		});
+	});
+
+	app.delete("/:tagId", adminAuth("tags:write"), async (c) => {
+		const { eq } = await import("drizzle-orm");
+		await db
+			.delete(tagMappings)
+			.where(eq(tagMappings.tagId, c.req.param("tagId")));
+		await stateManager.refreshTagMappings();
+		return c.json({ ok: true });
 	});
 
 	app.post("/", adminAuth("tags:write"), async (c) => {

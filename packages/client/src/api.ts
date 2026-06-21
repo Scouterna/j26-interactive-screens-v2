@@ -1,4 +1,4 @@
-import type { CreateDeviceResponse, DeviceResponse, SurveyConfig, SurveyResponse, SurveyStatus, SurveyType } from "shared";
+import type { CreateDeviceResponse, DeviceResponse, SurveyConfig, SurveyResponse, SurveyStatus, SurveyType, TagsPage } from "shared";
 import { BASE_PATH } from "./config";
 
 export class AuthError extends Error {
@@ -94,6 +94,15 @@ export interface TagStats {
 
 export async function fetchTagStats(): Promise<TagStats> {
 	return apiFetch("/tags/stats").then((r) => r.json() as Promise<TagStats>);
+}
+
+export async function fetchTags(search: string, offset: number): Promise<TagsPage> {
+	const params = new URLSearchParams({ search, offset: String(offset) });
+	return apiFetch(`/tags?${params}`).then((r) => r.json() as Promise<TagsPage>);
+}
+
+export async function deleteTag(tagId: string): Promise<void> {
+	await apiFetch(`/tags/${encodeURIComponent(tagId)}`, { method: "DELETE" });
 }
 
 export async function uploadTags(file: File): Promise<{ count: number }> {

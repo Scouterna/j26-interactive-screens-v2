@@ -53,6 +53,7 @@ export interface CreateDeviceResponse {
 	id: string;
 	name: string;
 	key: string;
+	surveyId: string | null;
 }
 export interface DeviceResponse {
 	id: string;
@@ -60,6 +61,19 @@ export interface DeviceResponse {
 	surveyId: string | null;
 	createdAt: string;
 }
+export interface TagItem {
+	id: string;
+	tagId: string;
+	displayName: string;
+	lat: string;
+	lng: string;
+}
+export interface TagsPage {
+	rows: TagItem[];
+	total: number;
+	pageSize: number;
+}
+
 export type ScanIngestionRequest = {
 	scannerId: string;
 	tagId: string;
