@@ -457,7 +457,12 @@ function StatusPicker({
 			{STATUSES.map((s) => (
 				<button
 					key={s}
-					onClick={() => s !== current && onChange(s)}
+					type="button"
+					onClick={() => {
+						if (s === current) return;
+						if (!window.confirm(`Change status to "${s}"?`)) return;
+						onChange(s);
+					}}
 					className={`px-3 py-1.5 capitalize transition-colors ${
 						s === current ? STATUS_ACTIVE[s] : STATUS_IDLE
 					}`}
