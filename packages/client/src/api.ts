@@ -19,6 +19,10 @@ async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
 	return res;
 }
 
+export async function fetchMe(): Promise<{ roles: string[] }> {
+	return apiFetch("/me").then((r) => r.json() as Promise<{ roles: string[] }>);
+}
+
 export async function fetchSurveys(): Promise<SurveyResponse[]> {
 	return apiFetch("/surveys").then((r) => r.json() as Promise<SurveyResponse[]>);
 }

@@ -10,6 +10,7 @@ import { initAuth } from "./auth-admin.js";
 import { logger } from "./logger.js";
 import { appConfigRoutes } from "./routes/app-config.js";
 import { devicesRoutes } from "./routes/devices.js";
+import { meRoutes } from "./routes/me.js";
 import { scansRoutes } from "./routes/scans.js";
 import { surveysRoutes } from "./routes/surveys.js";
 import { tagsRoutes } from "./routes/tags.js";
@@ -39,6 +40,7 @@ const stateManager = new StateManager(wsManager);
 const sub = app.basePath("/_services/screens");
 
 sub.route("/api/app-config", appConfigRoutes());
+sub.route("/api/me", meRoutes());
 sub.route("/api/scans", scansRoutes(stateManager));
 sub.route("/api/surveys", surveysRoutes(stateManager));
 sub.route("/api/devices", devicesRoutes());

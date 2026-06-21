@@ -8,7 +8,7 @@ import { devices } from "../db/schema.js";
 export function devicesRoutes() {
 	const app = new Hono();
 
-	app.get("/", adminAuth("read"), async (c) => {
+	app.get("/", adminAuth("devices:read"), async (c) => {
 		const all = await db
 			.select({
 				id: devices.id,
@@ -19,7 +19,7 @@ export function devicesRoutes() {
 		return c.json(all);
 	});
 
-	app.post("/", adminAuth("write"), async (c) => {
+	app.post("/", adminAuth("devices:write"), async (c) => {
 		const { name } = await c.req.json<{ name: string }>();
 		const rawKey = randomBytes(32).toString("hex");
 		const keyHash = createHash("sha256").update(rawKey).digest("hex");
@@ -30,7 +30,7 @@ export function devicesRoutes() {
 		return c.json({ ...d, key: rawKey }, 201);
 	});
 
-	app.patch("/:id", adminAuth("write"), async (c) => {
+	app.patch("/:id", adminAuth("devices:write"), async (c) => {
 		const { name } = await c.req.json<{ name: string }>();
 		const [d] = await db
 			.update(devices)
@@ -45,7 +45,7 @@ export function devicesRoutes() {
 		return c.json(d);
 	});
 
-	app.delete("/:id", adminAuth("write"), async (c) => {
+	app.delete("/:id", adminAuth("devices:write"), async (c) => {
 		await db.delete(devices).where(eq(devices.id, c.req.param("id")));
 		return c.json({ ok: true });
 	});

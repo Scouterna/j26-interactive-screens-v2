@@ -4,7 +4,7 @@ import { adminAuth } from "../auth-admin.js";
 export function appConfigRoutes() {
 	const app = new Hono();
 
-	app.get("/", adminAuth("read"), async (c) => {
+	app.get("/", adminAuth("any"), async (c) => {
 		return c.json({
 			navigation: [
 				{

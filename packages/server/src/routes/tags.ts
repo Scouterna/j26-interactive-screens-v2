@@ -9,7 +9,7 @@ import type { StateManager } from "../state/manager.js";
 export function tagsRoutes(stateManager: StateManager) {
 	const app = new Hono();
 
-	app.get("/stats", adminAuth("read"), async (c) => {
+	app.get("/stats", adminAuth("tags:read"), async (c) => {
 		const [row] = await db
 			.select({
 				tags: count(tagMappings.id),
@@ -19,7 +19,7 @@ export function tagsRoutes(stateManager: StateManager) {
 		return c.json({ tags: Number(row?.tags ?? 0), groups: Number(row?.groups ?? 0) });
 	});
 
-	app.post("/", adminAuth("write"), async (c) => {
+	app.post("/", adminAuth("tags:write"), async (c) => {
 		const form = await c.req.formData();
 		const file = form.get("file") as File;
 		const records = parse(await file.text(), {

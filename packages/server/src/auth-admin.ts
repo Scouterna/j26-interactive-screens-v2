@@ -18,8 +18,18 @@ export async function initAuth() {
 }
 
 export const getAuthorizationEndpoint = () => authorizationEndpoint;
+export const getJWKS = () => JWKS;
 
-export function adminAuth(required: "read" | "write") {
+type Permission =
+	| "any"
+	| "surveys:read"
+	| "surveys:write"
+	| "tags:read"
+	| "tags:write"
+	| "devices:read"
+	| "devices:write";
+
+export function adminAuth(required: Permission) {
 	return createMiddleware(async (c, next) => {
 		const cookieName = process.env.AUTH_COOKIE_NAME ?? "j26-auth_access-token";
 		const token = getCookie(c, cookieName);
@@ -38,10 +48,13 @@ export function adminAuth(required: "read" | "write") {
 							| undefined
 					)?.["j26-screens"]
 				)?.roles ?? [];
+			const [resource, level] = required.split(":");
 			const ok =
-				required === "read"
-					? roles.includes("read") || roles.includes("write")
-					: roles.includes("write");
+				required === "any"
+					? roles.length > 0
+					: level === "read"
+						? roles.includes(`${resource}:read`) || roles.includes(`${resource}:write`)
+						: roles.includes(`${resource}:write`);
 			if (!ok) {
 				logger.warn(
 					{ path: c.req.path, required, roles },

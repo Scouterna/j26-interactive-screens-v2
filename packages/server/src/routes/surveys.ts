@@ -8,7 +8,7 @@ import type { StateManager } from "../state/manager.js";
 export function surveysRoutes(stateManager: StateManager) {
 	const app = new Hono();
 
-	app.get("/", adminAuth("read"), async (c) => {
+	app.get("/", adminAuth("surveys:read"), async (c) => {
 		const all = await db.select().from(surveys);
 		return c.json(
 			all.map((s) => ({
@@ -18,7 +18,7 @@ export function surveysRoutes(stateManager: StateManager) {
 		);
 	});
 
-	app.get("/:id", adminAuth("read"), async (c) => {
+	app.get("/:id", adminAuth("surveys:read"), async (c) => {
 		const [s] = await db
 			.select()
 			.from(surveys)
@@ -27,7 +27,7 @@ export function surveysRoutes(stateManager: StateManager) {
 		return c.json({ ...s, displayState: stateManager.getDisplayState(s.id) });
 	});
 
-	app.post("/", adminAuth("write"), async (c) => {
+	app.post("/", adminAuth("surveys:write"), async (c) => {
 		const body = await c.req.json<{
 			name: string;
 			type: string;
@@ -49,7 +49,7 @@ export function surveysRoutes(stateManager: StateManager) {
 		return c.json(s, 201);
 	});
 
-	app.patch("/:id", adminAuth("write"), async (c) => {
+	app.patch("/:id", adminAuth("surveys:write"), async (c) => {
 		const body = await c.req.json<Record<string, unknown>>();
 		const patch = {
 			...body,
@@ -66,7 +66,7 @@ export function surveysRoutes(stateManager: StateManager) {
 		return c.json(s);
 	});
 
-	app.delete("/:id", adminAuth("write"), async (c) => {
+	app.delete("/:id", adminAuth("surveys:write"), async (c) => {
 		const id = c.req.param("id");
 		await stateManager.endSurvey(id);
 		await db.delete(surveys).where(eq(surveys.id, id));
