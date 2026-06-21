@@ -14,7 +14,7 @@ import { AuthContext } from "./AdminLayout";
 
 export default function DeviceList() {
 	const { markUnauthorized } = useContext(AuthContext);
-	const [devices, setDevices] = useState<DeviceItem[]>([]);
+	const [devices, setDevices] = useState<DeviceItem[] | null>(null);
 	const [surveyNames, setSurveyNames] = useState<Record<string, string>>({});
 	const [newName, setNewName] = useState("");
 	const [newKey, setNewKey] = useState<CreateDeviceResponse | null>(null);
@@ -28,6 +28,7 @@ export default function DeviceList() {
 			.then(setDevices)
 			.catch((err: unknown) => {
 				if (err instanceof AuthError) markUnauthorized();
+				else setDevices([]);
 			});
 		fetchSurveys()
 			.then((all) => {
@@ -150,7 +151,19 @@ export default function DeviceList() {
 						</tr>
 					</thead>
 					<tbody>
-						{devices.map((device) => (
+						{devices === null ? (
+							<tr>
+								<td colSpan={4} className="px-4 py-10 text-center text-gray-400">
+									Loading…
+								</td>
+							</tr>
+						) : devices.length === 0 ? (
+							<tr>
+								<td colSpan={4} className="px-4 py-10 text-center text-gray-400">
+									No devices yet
+								</td>
+							</tr>
+						) : devices.map((device) => (
 							<tr key={device.id} className="border-b border-gray-100 last:border-0">
 								<td className="px-4 py-2">
 									{renamingId === device.id ? (
@@ -226,13 +239,6 @@ export default function DeviceList() {
 								</td>
 							</tr>
 						))}
-						{devices.length === 0 && (
-							<tr>
-								<td colSpan={4} className="px-4 py-10 text-center text-gray-400">
-									No devices yet
-								</td>
-							</tr>
-						)}
 					</tbody>
 				</table>
 			</div>

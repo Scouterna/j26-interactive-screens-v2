@@ -13,7 +13,7 @@ const STATUS_CLASSES: Record<SurveyStatus, string> = {
 
 export default function SurveyList() {
 	const { markUnauthorized } = useContext(AuthContext);
-	const [surveys, setSurveys] = useState<SurveyResponse[]>([]);
+	const [surveys, setSurveys] = useState<SurveyResponse[] | null>(null);
 	const [showCreate, setShowCreate] = useState(false);
 
 	useEffect(() => {
@@ -21,6 +21,7 @@ export default function SurveyList() {
 			.then(setSurveys)
 			.catch((err: unknown) => {
 				if (err instanceof AuthError) markUnauthorized();
+				else setSurveys([]);
 			});
 	}, [markUnauthorized]);
 
@@ -34,8 +35,8 @@ export default function SurveyList() {
 		}
 	}
 
-	const activesurveys = surveys.filter((s) => s.status !== "ended");
-	const endedSurveys = surveys.filter((s) => s.status === "ended");
+	const activesurveys = (surveys ?? []).filter((s) => s.status !== "ended");
+	const endedSurveys = (surveys ?? []).filter((s) => s.status === "ended");
 
 	function renderTable(rows: SurveyResponse[], emptyText: string) {
 		return (
@@ -59,7 +60,19 @@ export default function SurveyList() {
 						</tr>
 					</thead>
 					<tbody>
-						{rows.map((survey) => (
+						{surveys === null ? (
+							<tr>
+								<td colSpan={5} className="px-4 py-10 text-center text-gray-400">
+									Loading…
+								</td>
+							</tr>
+						) : rows.length === 0 ? (
+							<tr>
+								<td colSpan={5} className="px-4 py-10 text-center text-gray-400">
+									{emptyText}
+								</td>
+							</tr>
+						) : rows.map((survey) => (
 							<tr
 								key={survey.id}
 								className="border-b border-gray-100 last:border-0"
@@ -97,16 +110,6 @@ export default function SurveyList() {
 								</td>
 							</tr>
 						))}
-						{rows.length === 0 && (
-							<tr>
-								<td
-									colSpan={5}
-									className="px-4 py-10 text-center text-gray-400"
-								>
-									{emptyText}
-								</td>
-							</tr>
-						)}
 					</tbody>
 				</table>
 			</div>
