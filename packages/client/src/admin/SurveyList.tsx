@@ -33,32 +33,36 @@ export default function SurveyList() {
 		}
 	}
 
-	return (
-		<div>
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-xl font-semibold text-gray-900">Surveys</h1>
-				<button
-					onClick={() => setShowCreate(true)}
-					className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700"
-				>
-					New survey
-				</button>
-			</div>
+	const activesurveys = surveys.filter((s) => s.status !== "ended");
+	const endedSurveys = surveys.filter((s) => s.status === "ended");
 
+	function renderTable(rows: SurveyResponse[], emptyText: string) {
+		return (
 			<div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
 				<table className="w-full text-sm">
 					<thead>
 						<tr className="border-b border-gray-200 bg-gray-50">
-							<th className="px-4 py-3 text-left font-medium text-gray-500">Name</th>
-							<th className="px-4 py-3 text-left font-medium text-gray-500">Type</th>
-							<th className="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-							<th className="px-4 py-3 text-left font-medium text-gray-500">Created</th>
+							<th className="px-4 py-3 text-left font-medium text-gray-500">
+								Name
+							</th>
+							<th className="px-4 py-3 text-left font-medium text-gray-500">
+								Type
+							</th>
+							<th className="px-4 py-3 text-left font-medium text-gray-500">
+								Status
+							</th>
+							<th className="px-4 py-3 text-left font-medium text-gray-500">
+								Created
+							</th>
 							<th className="px-4 py-3" />
 						</tr>
 					</thead>
 					<tbody>
-						{surveys.map((survey) => (
-							<tr key={survey.id} className="border-b border-gray-100 last:border-0">
+						{rows.map((survey) => (
+							<tr
+								key={survey.id}
+								className="border-b border-gray-100 last:border-0"
+							>
 								<td className="px-4 py-3">
 									<Link
 										to="/admin/surveys/$id"
@@ -68,7 +72,9 @@ export default function SurveyList() {
 										{survey.name}
 									</Link>
 								</td>
-								<td className="px-4 py-3 text-gray-600 capitalize">{survey.type}</td>
+								<td className="px-4 py-3 text-gray-600 capitalize">
+									{survey.type}
+								</td>
 								<td className="px-4 py-3">
 									<span
 										className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_CLASSES[survey.status]}`}
@@ -81,6 +87,7 @@ export default function SurveyList() {
 								</td>
 								<td className="px-4 py-3 text-right">
 									<button
+										type="button"
 										onClick={() => void handleDelete(survey.id)}
 										className="text-red-500 hover:text-red-700"
 									>
@@ -89,16 +96,45 @@ export default function SurveyList() {
 								</td>
 							</tr>
 						))}
-						{surveys.length === 0 && (
+						{rows.length === 0 && (
 							<tr>
-								<td colSpan={5} className="px-4 py-10 text-center text-gray-400">
-									No surveys yet
+								<td
+									colSpan={5}
+									className="px-4 py-10 text-center text-gray-400"
+								>
+									{emptyText}
 								</td>
 							</tr>
 						)}
 					</tbody>
 				</table>
 			</div>
+		);
+	}
+
+	return (
+		<div>
+			<div className="flex items-center justify-between mb-6">
+				<h1 className="text-xl font-semibold text-gray-900">Surveys</h1>
+				<button
+					type="button"
+					onClick={() => setShowCreate(true)}
+					className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700"
+				>
+					New survey
+				</button>
+			</div>
+
+			{renderTable(activesurveys, "No surveys yet")}
+
+			{endedSurveys.length > 0 && (
+				<div className="mt-8">
+					<h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+						Ended surveys
+					</h2>
+					{renderTable(endedSurveys, "")}
+				</div>
+			)}
 
 			{showCreate && (
 				<CreateSurveyModal
