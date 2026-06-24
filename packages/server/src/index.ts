@@ -37,7 +37,7 @@ const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 const wsManager = new WsManager();
 const stateManager = new StateManager(wsManager);
 
-const sub = app.basePath("/_services/screens");
+const sub = app.basePath("/_services/interactive-screens");
 
 sub.route("/api/app-config", appConfigRoutes());
 sub.route("/api/me", meRoutes());
@@ -51,7 +51,7 @@ sub.use(
 	"/*",
 	serveStatic({
 		root: publicDir,
-		rewriteRequestPath: (path) => path.slice("/_services/screens".length) || "/",
+		rewriteRequestPath: (path) => path.slice("/_services/interactive-screens".length) || "/",
 	}),
 );
 sub.get("/*", serveStatic({ root: publicDir, path: "index.html" }));
