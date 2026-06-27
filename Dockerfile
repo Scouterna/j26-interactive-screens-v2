@@ -39,6 +39,7 @@ COPY --from=deps /app/packages/server/node_modules ./packages/server/node_module
 
 # Server source + client build output (in packages/server/public/)
 COPY --from=builder /app/packages/server/src ./packages/server/src
+COPY --from=builder /app/packages/server/drizzle ./packages/server/drizzle
 COPY --from=builder /app/packages/server/public ./packages/server/public
 COPY --from=builder /app/packages/server/package.json ./packages/server/
 
