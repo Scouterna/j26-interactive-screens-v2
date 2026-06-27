@@ -1,5 +1,5 @@
 # ── Stage 1: install all dependencies (needed for build) ─────────────────────
-FROM node:22-alpine AS deps
+FROM node:24-alpine AS deps
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -12,7 +12,7 @@ COPY packages/shared/package.json ./packages/shared/
 RUN pnpm install --frozen-lockfile
 
 # ── Stage 2: build the client ─────────────────────────────────────────────────
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -27,7 +27,7 @@ COPY . .
 RUN pnpm --filter client build
 
 # ── Stage 3: production image ─────────────────────────────────────────────────
-FROM node:22-alpine AS runner
+FROM node:24-alpine AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
@@ -46,4 +46,4 @@ COPY --from=builder /app/packages/server/package.json ./packages/server/
 COPY --from=builder /app/packages/shared ./packages/shared
 
 EXPOSE 3000
-CMD ["packages/server/node_modules/.bin/tsx", "packages/server/src/index.ts"]
+CMD ["node", "packages/server/node_modules/tsx/dist/cli.mjs", "packages/server/src/index.ts"]
