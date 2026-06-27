@@ -9,9 +9,9 @@ export function appConfigRoutes() {
 			navigation: [
 				{
 					type: "page",
-					id: "page_screens",
-					label: "screens.screens.label",
-					icon: "device-screen",
+					id: "page_interactive_screens",
+					label: "interactive_screens.surveys.label",
+					icon: "chart-bar",
 					path: "..",
 				},
 			],
