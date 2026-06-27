@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-const BASE_PATH = "/_services/screens";
+const BASE_PATH = "/_services/interactive-screens";
 
 export default defineConfig({
 	base: `${BASE_PATH}/`,

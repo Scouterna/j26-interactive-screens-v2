@@ -1,1 +1,1 @@
-export const BASE_PATH = "/_services/screens";
+export const BASE_PATH = "/_services/interactive-screens";
