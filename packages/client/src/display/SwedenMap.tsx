@@ -1,17 +1,17 @@
 import { geoMercator, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
-import type { Topology } from "topojson-specification";
+import type { GeometryCollection, Topology } from "topojson-specification";
 import type { Pin } from "shared";
 import worldData from "world-atlas/countries-50m.json";
 
 const SWEDEN_ID = "752";
 
-type WorldTopology = Topology<{ countries: Parameters<typeof feature>[1] extends string ? never : object }>;
+type WorldTopology = Topology<{ countries: GeometryCollection }>;
 
-const allCountries = feature(worldData as unknown as WorldTopology, "countries" as Parameters<typeof feature>[1]);
-const hasFeatures = "features" in allCountries;
-const sweden = hasFeatures ? (allCountries.features.find((f) => f.id === SWEDEN_ID) ?? null) : null;
-const otherCountries = hasFeatures ? allCountries.features.filter((f) => f.id !== SWEDEN_ID) : [];
+const worldTopology = worldData as unknown as WorldTopology;
+const allCountries = feature(worldTopology, worldTopology.objects.countries);
+const sweden = allCountries.features.find((f) => f.id === SWEDEN_ID) ?? null;
+const otherCountries = allCountries.features.filter((f) => f.id !== SWEDEN_ID);
 
 function withinSweden(pin: Pin) {
 	return pin.lat >= 55 && pin.lat <= 70 && pin.lng >= 10 && pin.lng <= 25;

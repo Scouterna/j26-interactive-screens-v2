@@ -52,7 +52,7 @@ export default function DeviceList() {
 		if (!name) return;
 		try {
 			const updated = await renameDevice(id, name);
-			setDevices((prev) => prev.map((d) => (d.id === id ? updated : d)));
+			setDevices((prev) => prev?.map((d) => (d.id === id ? updated : d)) ?? null);
 		} catch (err) {
 			if (err instanceof AuthError) markUnauthorized();
 		} finally {
@@ -67,7 +67,7 @@ export default function DeviceList() {
 		try {
 			const device = await createDevice(newName.trim());
 			setDevices((prev) => [
-				...prev,
+				...(prev ?? []),
 				{ id: device.id, name: device.name, surveyId: null, createdAt: new Date().toISOString() },
 			]);
 			setNewKey(device);
@@ -83,7 +83,7 @@ export default function DeviceList() {
 		if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
 		try {
 			await deleteDevice(id);
-			setDevices((prev) => prev.filter((d) => d.id !== id));
+			setDevices((prev) => prev?.filter((d) => d.id !== id) ?? null);
 		} catch (err) {
 			if (err instanceof AuthError) markUnauthorized();
 		}
@@ -94,7 +94,7 @@ export default function DeviceList() {
 		if (!window.confirm(`Remove "${device.name}" from "${surveyName}"?`)) return;
 		try {
 			const updated = await assignDeviceSurvey(device.id, null);
-			setDevices((prev) => prev.map((d) => (d.id === device.id ? updated : d)));
+			setDevices((prev) => prev?.map((d) => (d.id === device.id ? updated : d)) ?? null);
 		} catch (err) {
 			if (err instanceof AuthError) markUnauthorized();
 		}

@@ -7,7 +7,7 @@ const LNG = 14.134707;
 function check() {
 	const now = new Date();
 	const { sunrise, sunset } = SunCalc.getTimes(now, LAT, LNG);
-	return now >= sunrise && now <= sunset;
+	return sunrise != null && sunset != null && now >= sunrise && now <= sunset;
 }
 
 export function useDaylight() {

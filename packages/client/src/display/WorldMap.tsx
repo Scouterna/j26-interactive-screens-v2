@@ -1,12 +1,13 @@
 import { geoEqualEarth, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
-import type { Topology } from "topojson-specification";
+import type { GeometryCollection, Topology } from "topojson-specification";
 import type { Pin } from "shared";
 import worldData from "world-atlas/countries-110m.json";
 
-type WorldTopology = Topology<{ countries: Parameters<typeof feature>[1] extends string ? never : object }>;
+type WorldTopology = Topology<{ countries: GeometryCollection }>;
 
-const countries = feature(worldData as unknown as WorldTopology, "countries" as Parameters<typeof feature>[1]);
+const worldTopology = worldData as unknown as WorldTopology;
+const countries = feature(worldTopology, worldTopology.objects.countries);
 
 const EE_RATIO = 0.487;
 
@@ -36,7 +37,7 @@ export default function WorldMap({ pins, daylight, width }: Props) {
 				<style>{"@keyframes pin-fade{from{opacity:1}to{opacity:0}}"}</style>
 			</defs>
 			<rect width={width} height={svgHeight} fill={ocean} />
-			{"features" in countries && countries.features.map((f, i) => (
+			{countries.features.map((f, i) => (
 				<path key={i} d={pathGen(f) ?? ""} fill={fill} stroke={stroke} strokeWidth={0.5} />
 			))}
 			{pins.map((pin) => {

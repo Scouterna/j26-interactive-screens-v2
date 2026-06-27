@@ -30,7 +30,7 @@ export default function SurveyList() {
 		if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
 		try {
 			await deleteSurvey(id);
-			setSurveys((prev) => prev.filter((s) => s.id !== id));
+			setSurveys((prev) => prev?.filter((s) => s.id !== id) ?? null);
 		} catch (err) {
 			if (err instanceof AuthError) markUnauthorized();
 		}
@@ -168,7 +168,7 @@ export default function SurveyList() {
 				<CreateSurveyModal
 					onClose={() => setShowCreate(false)}
 					onCreate={(survey) => {
-						setSurveys((prev) => [...prev, survey]);
+						setSurveys((prev) => [...(prev ?? []), survey]);
 						setShowCreate(false);
 					}}
 				/>

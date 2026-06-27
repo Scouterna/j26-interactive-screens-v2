@@ -5,12 +5,6 @@ import { AuthContext } from "./AdminLayout";
 
 const SCANNER_IDS = ["1", "2", "3", "4"];
 
-function toLocalDatetimeInput(utc: string): string {
-	const d = new Date(utc);
-	const pad = (n: number) => String(n).padStart(2, "0");
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 interface CreateBucket {
 	label: string;
 	scannerIds: string[];
