@@ -20,24 +20,39 @@ export default function DisplayView() {
 	if (ended && displayState?.type === "vote") {
 		return (
 			<div className={`min-h-screen ${bg} flex items-center justify-center`}>
-				<VoteResults state={displayState as VoteDisplayState} daylight={daylight} />
+				<VoteResults
+					state={displayState as VoteDisplayState}
+					daylight={daylight}
+				/>
 			</div>
 		);
 	}
 
 	if (displayState?.type === "map") {
-		return <MapDisplay state={displayState as MapDisplayState} daylight={daylight} />;
+		return (
+			<MapDisplay state={displayState as MapDisplayState} daylight={daylight} />
+		);
 	}
 
 	return (
-		<div className={`min-h-screen ${bg} flex flex-col items-center justify-center`}>
+		<div
+			className={`min-h-screen ${bg} flex flex-col items-center justify-center`}
+		>
 			{!displayState ? (
-				!ended && <p className={`text-xl ${daylight ? "text-gray-400" : "text-gray-700"}`}>Ansluter…</p>
+				!ended && (
+					<p
+						className={`text-xl ${daylight ? "text-gray-400" : "text-gray-700"}`}
+					>
+						Ansluter…
+					</p>
+				)
 			) : (
 				<VoteDisplay state={displayState} daylight={daylight} />
 			)}
 			{ended && (
-				<p className={`text-sm uppercase tracking-widest mt-8 ${daylight ? "text-gray-400" : "text-gray-600"}`}>
+				<p
+					className={`text-sm uppercase tracking-widest mt-8 ${daylight ? "text-gray-400" : "text-gray-600"}`}
+				>
 					Röstning avslutad
 				</p>
 			)}

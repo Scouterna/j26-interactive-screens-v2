@@ -30,17 +30,21 @@ export default function SwedenMap({ pins, daylight, width, height }: Props) {
 	// Fit Sweden in the middle of the SVG with generous padding to show surrounding region
 	const pad = Math.min(width, height) * 0.15;
 	const projection = geoMercator().fitExtent(
-		[[pad, pad], [width - pad, height - pad]],
-		sweden
+		[
+			[pad, pad],
+			[width - pad, height - pad],
+		],
+		sweden,
 	);
 	const pathGen = geoPath(projection);
 	const swedenPins = pins.filter(withinSweden);
 
-	const ocean = daylight ? "#bfdbfe" : "#1e3a5f";
-	const land = daylight ? "#ffffff" : "#374151";
-	const landStroke = daylight ? "#e2e8f0" : "#4b5563";
-	const swedenFill = daylight ? "#bbf7d0" : "#14532d";
-	const swedenStroke = daylight ? "#86efac" : "#22c55e";
+	const ocean = daylight ? "#bfdbfe" : "#0f2744";
+	const land = daylight ? "#ffffff" : "#1e3a5a";
+	const landStroke = daylight ? "#e2e8f0" : "#ffffff";
+	const neighbourOpacity = daylight ? 0.6 : 0.25;
+	const swedenFill = daylight ? "#ffffff" : land;
+	const swedenStroke = daylight ? "#bfdbfe" : landStroke;
 
 	return (
 		<svg width={width} height={height}>
@@ -49,16 +53,40 @@ export default function SwedenMap({ pins, daylight, width, height }: Props) {
 			</defs>
 			<rect width={width} height={height} fill={ocean} />
 			{otherCountries.map((f, i) => (
-				<path key={i} d={pathGen(f) ?? ""} fill={land} stroke={landStroke} strokeWidth={0.5} />
+				<path
+					key={i}
+					d={pathGen(f) ?? ""}
+					fill={land}
+					stroke={landStroke}
+					strokeWidth={0.5}
+					opacity={neighbourOpacity}
+				/>
 			))}
-			<path d={pathGen(sweden) ?? ""} fill={swedenFill} stroke={swedenStroke} strokeWidth={1} />
-				{swedenPins.map((pin) => {
+			<path
+				d={pathGen(sweden) ?? ""}
+				fill={swedenFill}
+				stroke={swedenStroke}
+				strokeWidth={1}
+			/>
+			{swedenPins.map((pin) => {
 				const pos = projection([pin.lng, pin.lat]);
 				if (!pos) return null;
-				const lifetime = (new Date(pin.expiresAt).getTime() - new Date(pin.scannedAt).getTime()) / 1000;
-				const elapsed = Math.max(0, (Date.now() - new Date(pin.scannedAt).getTime()) / 1000);
+				const lifetime =
+					(new Date(pin.expiresAt).getTime() -
+						new Date(pin.scannedAt).getTime()) /
+					1000;
+				const elapsed = Math.max(
+					0,
+					(Date.now() - new Date(pin.scannedAt).getTime()) / 1000,
+				);
 				return (
-					<g key={pin.tagId} style={{ animation: `pin-fade ${lifetime}s linear forwards`, animationDelay: `-${elapsed}s` }}>
+					<g
+						key={pin.tagId}
+						style={{
+							animation: `pin-fade ${lifetime}s linear forwards`,
+							animationDelay: `-${elapsed}s`,
+						}}
+					>
 						<circle cx={pos[0]} cy={pos[1]} r={4} fill="#f59e0b" />
 					</g>
 				);

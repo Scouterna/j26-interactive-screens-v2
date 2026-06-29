@@ -27,9 +27,9 @@ export default function WorldMap({ pins, daylight, width }: Props) {
 	projection.translate([tx - width * 0.05, ty]);
 	const pathGen = geoPath(projection);
 
-	const ocean = daylight ? "#bfdbfe" : "#1e3a5f";
-	const fill = daylight ? "#ffffff" : "#374151";
-	const stroke = daylight ? "#e2e8f0" : "#4b5563";
+	const ocean = daylight ? "#bfdbfe" : "#0f2744";
+	const fill = daylight ? "#ffffff" : "#1e3a5a";
+	const stroke = daylight ? "#e2e8f0" : "#ffffff";
 
 	return (
 		<svg width={width} height={svgHeight}>

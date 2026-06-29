@@ -44,7 +44,7 @@ export default function MapDisplay({ state, daylight }: Props) {
 			</div>
 			<div className="relative flex-none overflow-visible" style={{ height: 20, zIndex: 10 }}>
 				<div className="absolute left-0 right-0" style={{ top: "50%", transform: "translateY(-75%)" }}>
-					<BannerDivider />
+					<BannerDivider daylight={daylight} />
 				</div>
 			</div>
 			<div ref={swedenRef} className="flex-1 overflow-hidden">
